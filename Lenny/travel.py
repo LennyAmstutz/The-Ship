@@ -1,7 +1,6 @@
 import requests
 import time
-from Lenny import config as cfg
-
+import config as cfg
 
 # --- API -------------------------------------------------------------
 
