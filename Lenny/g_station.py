@@ -1,3 +1,12 @@
+"""
+G-Station 1-5 abfangen und 60s in der Naehe bleiben.
+
+Nutzt config.py und travel.py aus diesem Projekt.
+RabbitMQ laeuft lokal auf dieser VM -> host = localhost, port 2014.
+
+Starten:  python3 g_station.py
+"""
+
 import json
 import threading
 import time
@@ -5,26 +14,87 @@ import time
 import pika
 import requests
 
-import communication as c
-import energy_management as em
+import config as cfg
 import travel as t
 
 # --- anpassen falls noetig -------------------------------------------------
 RABBIT_HOST = "localhost"
 RABBIT_PORT = 2014
-EIGENES_SCHIFF = "192.168.101.50"
+EIGENES_SCHIFF = cfg.HOST            # "192.168.101.50" -> eigenes Schiff filtern
 
 STATION_NAME = "G-Station 1-5"
 TREFFPUNKT_X, TREFFPUNKT_Y = -19747, -14282
 ZIEL_SEKUNDEN = 60
+TOLERANZ = 100                        # wie nah an den Treffpunkt bevor gewartet wird
 # ---------------------------------------------------------------------------
 
 EXCHANGE = "scanner/detected_objects"
-SET_TARGET_URL = "http://10.255.255.254:2009/set_target"
+POS_URL = f"http://{cfg.HOST}:2010/pos"
+ENERGY_URLS = [f"http://{cfg.HOST}:2032/limits", f"http://{cfg.HOST}:2033/limits"]
 
 letzte_position = None
 lock = threading.Lock()
 
+
+# --- Energie ---------------------------------------------------------------
+
+def setze_energie(limits):
+    for url in ENERGY_URLS:
+        try:
+            requests.put(url, json=limits, timeout=cfg.TIMEOUT)
+        except Exception as e:
+            print("Energie", url, "fehlgeschlagen:", e)
+
+
+def fliegen_ein():
+    """Thruster und vor allem der Scanner brauchen Energie."""
+    setze_energie({
+        "laser": 0,
+        "cargo_bot": 0,
+        "laser_amplifier": 0,
+        "sensor_plasma_radiation": 0,
+        "thruster_back": 1,
+        "thruster_front": 1,
+        "thruster_front_left": 1,
+        "thruster_front_right": 1,
+        "thruster_bottom_left": 1,
+        "thruster_bottom_right": 1,
+        "scanner": 1,
+        "sensor_atomic_field": 0,
+        "matter_stabilizer": 0,
+        "nuclear_reactor": 0,
+        "sensor_void_energy": 0,
+        "shield_generator": 0,
+    })
+
+
+# --- Navigation ------------------------------------------------------------
+
+def position():
+    return requests.get(POS_URL, timeout=cfg.TIMEOUT).json()["pos"]
+
+
+def fly_to_pos(x, y):
+    """Ziel setzen und warten, bis wir dort sind."""
+    t.set_target({"x": x, "y": y})
+    while True:
+        p = position()
+        if abs(p["x"] - x) < TOLERANZ and abs(p["y"] - y) < TOLERANZ:
+            break
+        time.sleep(1)
+    print(f"Position erreicht: {x}/{y}")
+
+
+def ist_in_reichweite():
+    try:
+        s = t.stations() or {}
+        return any(STATION_NAME.lower() in name.lower() for name in s)
+    except Exception as e:
+        print("stations_in_reach fehlgeschlagen:", e)
+        return False
+
+
+# --- Scanner / RabbitMQ ----------------------------------------------------
 
 def consume(handle_station):
     connection = pika.BlockingConnection(
@@ -55,25 +125,11 @@ def handle_station(station):
         print(">>> GEFUNDEN:", name, pos)
 
 
-def setze_ziel(x, y):
-    try:
-        requests.post(SET_TARGET_URL, json={"target": {"x": x, "y": y}}, timeout=5)
-    except Exception as e:
-        print("set_target fehlgeschlagen:", e)
-
-
-def ist_in_reichweite():
-    try:
-        stations = c.get_near_station().json().get("stations") or {}
-        return any(STATION_NAME.lower() in s.lower() for s in stations)
-    except Exception as e:
-        print("stations_in_reach fehlgeschlagen:", e)
-        return False
-
+# --- Hauptablauf -----------------------------------------------------------
 
 def main():
-    em.fliegen_ein()
-    t.travel_position_until_recive(TREFFPUNKT_X, TREFFPUNKT_Y)
+    fliegen_ein()
+    fly_to_pos(TREFFPUNKT_X, TREFFPUNKT_Y)
     print("am Treffpunkt, warte auf", STATION_NAME)
 
     threading.Thread(target=consume, args=(handle_station,), daemon=True).start()
@@ -85,8 +141,8 @@ def main():
         with lock:
             pos = letzte_position
 
-        if pos and pos != zuletzt_verfolgt:
-            setze_ziel(pos[0], pos[1])
+        if pos and pos != zuletzt_verfolgt:      # Station bewegt sich -> nachziehen
+            t.set_target({"x": pos[0], "y": pos[1]})
             zuletzt_verfolgt = pos
 
         if ist_in_reichweite():
