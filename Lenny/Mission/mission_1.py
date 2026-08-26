@@ -27,5 +27,5 @@ def run():
             sell_at_core(amount)
     set_target({"x": 7000, "y": 7000})
 
-    if __name__ == "__main__":
-        run()
+if __name__ == "__main__":
+    run()
