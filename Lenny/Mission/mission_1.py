@@ -1,9 +1,5 @@
-import sys
-from asyncio import run
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
+import requests
 from Actions.communication_commands import buy, sell
 from Actions.steering_commands import set_target, wait_until_in_reach
 from config import BUY_STATION as AZURA, SELL_STATION as CORE, RESOURCE as ITEM
@@ -23,12 +19,27 @@ def sell_at_core(amount):
 
 amounts = [4, 8, 12]
 for i, amount in enumerate(amounts):
-    buy_at_azura(amount)
+    try:
+        buy_at_azura(amount)
+    except requests.RequestException as e:
+        print(f"Fehler beim Kaufen: {e}")
+        break
+    except TimeoutError as e:
+        print(f"Timeout beim Warten auf Station vor dem Kaufen: {e}")
+        break
+
     if i < len(amounts) - 1:
-        sell_at_core(amount)
+        try:
+            sell_at_core(amount)
+        except requests.RequestException as e:
+            print(f"Fehler beim Verkaufen: {e}")
+            break
+        except TimeoutError as e:
+            print(f"Timeout beim Warten auf Station vor dem Verkaufen: {e}")
+            break
 
-set_target({"x": 7000, "y": 7000})
+try:
+    set_target({"x": 7000, "y": 7000})
+except requests.RequestException as e:
+    print(f"Fehler beim Setzen des Ziels: {e}")
 
-
-if __name__ == "__main__":
-    run()

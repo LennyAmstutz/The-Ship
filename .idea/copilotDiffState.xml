@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CopilotDiffPersistence">
+    <option name="pendingDiffs">
+      <map>
+        <entry key="$PROJECT_DIR$/Lenny/Actions/steering_commands.py">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/Lenny/Actions/steering_commands.py" />
+              <option name="originalContent" value="import time&#10;&#10;import requests&#10;from config import command&#10;from Actions.communication_commands import stations_in_reach&#10;&#10;&#10;def set_target(target):&#10;    response = requests.post(&#10;        command[&quot;set_target&quot;],&#10;        json={&quot;target&quot;: target}&#10;    )&#10;    response.raise_for_status()&#10;    return response.json()&#10;&#10;def wait_until_in_reach(station_name, timeout=60):&#10;    waited = 0&#10;    stations = stations_in_reach()[&quot;stations&quot;]&#10;    while station_name not in stations:&#10;        if waited &gt;= timeout:&#10;            raise TimeoutError(f&quot;{station_name} not in reach after {timeout}s&quot;)&#10;        time.sleep(1)&#10;        waited += 1&#10;        stations = stations_in_reach()[&quot;stations&quot;]&#10;" />
+              <option name="updatedContent" value="import time&#10;&#10;import requests&#10;from config import command&#10;from Actions.communication_commands import stations_in_reach&#10;&#10;&#10;def set_target(target, timeout: float = 5.0):&#10;    &quot;&quot;&quot;Sende Ziel an den Steuerungs-Endpoint. Timeout ist in Sekunden.&#10;&#10;    Bei HTTP-Fehlern/Netzwerkfehlern wird die requests-Exception weitergereicht.&#10;    &quot;&quot;&quot;&#10;    response = requests.post(&#10;        command[&quot;set_target&quot;],&#10;        json={&quot;target&quot;: target},&#10;        timeout=timeout,&#10;    )&#10;    response.raise_for_status()&#10;    return response.json()&#10;&#10;&#10;def wait_until_in_reach(station_name, timeout=60, poll_interval=1.0, http_timeout=5.0):&#10;    &quot;&quot;&quot;Warte bis `station_name` in Reichweite ist.&#10;&#10;    - timeout: maximale Wartezeit in Sekunden&#10;    - poll_interval: Sekunden zwischen den Abfragen (kann Float sein)&#10;    - http_timeout: Timeout für den HTTP-Request innerhalb von stations_in_reach&#10;&#10;    Liefert True bei Erfolg, wirft TimeoutError wenn nicht gefunden.&#10;    Exceptions aus requests werden intern behandelt (bei kurzzeitigen Netzwerkfehlern&#10;    wird weiter versucht), längere Fehler führen zum Timeout.&#10;    &quot;&quot;&quot;&#10;    start = time.monotonic()&#10;    while True:&#10;        elapsed = time.monotonic() - start&#10;        if elapsed &gt;= timeout:&#10;            raise TimeoutError(f&quot;{station_name} not in reach after {timeout}s&quot;)&#10;&#10;        try:&#10;            resp = stations_in_reach(timeout=http_timeout)&#10;            stations = resp.get(&quot;stations&quot;, []) if isinstance(resp, dict) else []&#10;        except requests.RequestException:&#10;            # Netzwerkproblem — kurz warten und erneut prüfen bis timeout erreicht&#10;            time.sleep(poll_interval)&#10;            continue&#10;&#10;        if station_name in stations:&#10;            return True&#10;&#10;        time.sleep(poll_interval)&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>
