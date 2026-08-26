@@ -26,3 +26,6 @@ def run():
         if i < len(amounts) - 1:
             sell_at_core(amount)
     set_target({"x": 7000, "y": 7000})
+
+    if __name__ == "__main__":
+        run()
