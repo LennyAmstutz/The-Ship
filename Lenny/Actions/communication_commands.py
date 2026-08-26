@@ -1,12 +1,6 @@
 import requests
 from config import command
 
-def pos():
-    response = requests.get(
-        command["pos"])
-    response.raise_for_status()
-    return response.json()
-
 def stations_in_reach():
     response = requests.get(
         command["stations_in_reach"])

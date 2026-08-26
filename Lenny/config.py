@@ -1,12 +1,14 @@
 # --- Verbinden ---------------------------------------------------------
 HOST = "192.168.101.50"
 
-STEER = f"http://{HOST}:2009"
-NAV = f"http://{HOST}:2011"
-HOLD = f"http://{HOST}:2012"
-COMUNICATION = f"http://{HOST}:2026"
-
-
+command = {
+    "buy": f"http://{HOST}:2011/buy",
+    "sell": f"http://{HOST}:2011/sell",
+    "hold": f"http://{HOST}:2012/hold",
+    "set_target" : f"http://{HOST}:2009/set_target",
+    "pos" :  f"http://{HOST}:2011/pos",
+    "stations_in_reach" : f"http://{HOST}:2011/stations_in_reach",
+}
 
 # --- Mission 1 ---------------------------------------------------------
 RESOURCE = "IRON"
@@ -14,3 +16,6 @@ RESOURCE = "IRON"
 BUY_STATION = "Azura Station"
 SELL_STATION = "Core Station"
 
+# --- Mission 2 ---------------------------------------------------------
+
+# --- Mission 3 ---------------------------------------------------------
