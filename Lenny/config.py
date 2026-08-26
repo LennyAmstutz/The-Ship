@@ -6,7 +6,6 @@ command = {
     "sell": f"http://{HOST}:2011/sell",
     "hold": f"http://{HOST}:2012/hold",
     "set_target" : f"http://{HOST}:2009/set_target",
-    "pos" :  f"http://{HOST}:2011/pos",
     "stations_in_reach" : f"http://{HOST}:2011/stations_in_reach",
 }
 

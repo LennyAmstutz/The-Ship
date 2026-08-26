@@ -1,3 +1,9 @@
+import sys
+from asyncio import run
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from Actions.communication_commands import buy, sell
 from Actions.steering_commands import set_target, wait_until_in_reach
 from config import BUY_STATION as AZURA, SELL_STATION as CORE, RESOURCE as ITEM
@@ -22,3 +28,7 @@ for i, amount in enumerate(amounts):
         sell_at_core(amount)
 
 set_target({"x": 7000, "y": 7000})
+
+
+if __name__ == "__main__":
+    run()
