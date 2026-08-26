@@ -12,6 +12,8 @@ def buy(station, what, amount):
         command["buy"],
         json={"station": station, "what": what, "amount": amount}
     )
+    if not response.ok:
+        print("Server response:", response.text)
     response.raise_for_status()
     return response.json()
 
