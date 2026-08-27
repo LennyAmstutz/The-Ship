@@ -20,3 +20,11 @@ SELL_STATION = "Core Station"
 # --- Mission 2 ---------------------------------------------------------
 
 # --- Mission 3 ---------------------------------------------------------
+SCAN_QUEUE = "scanner"
+RABBITMQ_USER = "tags"
+RABBITMQ_PASS = "[administrator]"
+
+# WhatsUpp Mission
+WHATSUPP_STATION = "G-Station 1-5"
+WHATSUPP_COORDINATES = {"x": -19747, "y": -14282}
+WHATSUPP_DURATION = 60  # 60 Sekunden
