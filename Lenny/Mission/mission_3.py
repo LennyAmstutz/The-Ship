@@ -14,7 +14,7 @@ def handle_scan(data):
 
 def run():
     set_target(WHATSUPP_COORDINATES)
-    wait_until_in_reach(WHATSUPP_STATION)
+    wait_until_in_reach(WHATSUPP_STATION, timeout=None)
 
     print(f"[WhatsUpp] Bleibe {WHATSUPP_DURATION}s in der Nähe von {WHATSUPP_STATION}...")
     start_time = time.time()
