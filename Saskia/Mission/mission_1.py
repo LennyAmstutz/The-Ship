@@ -2,9 +2,9 @@ from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from Actions.communication_commands import buy, sell
-from Actions.steering_commands import set_target, wait_until_in_reach
-from config import BUY_STATION as AZURA, SELL_STATION as CORE, RESOURCE as ITEM
+from Saskia.Actions.communication_commands import buy, sell
+from Saskia.Actions.steering_commands import set_target, wait_until_in_reach
+from Saskia.config import BUY_STATION as AZURA, SELL_STATION as CORE, RESOURCE as ITEM
 
 
 def buy_at_azura(amount):

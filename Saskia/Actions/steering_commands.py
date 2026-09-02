@@ -1,8 +1,8 @@
 import time
 
 import requests
-from config import command
-from Actions.communication_commands import stations_in_reach
+from Saskia.config import command
+from Saskia.Actions.communication_commands import stations_in_reach
 
 
 def set_target(target):

@@ -1,5 +1,5 @@
 import requests
-from config import command
+from Saskia.config import command
 
 def stations_in_reach():
     response = requests.get(
