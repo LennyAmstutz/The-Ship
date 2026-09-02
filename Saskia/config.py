@@ -24,7 +24,7 @@ SELL_STATION = "Core Station"
 # --- Mission 3 ---------------------------------------------------------
 SCAN_QUEUE = "scanner"
 RABBITMQ_USER = "tags"
-RABBITMQ_PASS = "[administrator]"
+RABBITMQ_PASS = "DEIN_ECHTES_PASSWORT"
 
 WHATSUPP_STATION = "G-Station 1-5"
 HOLD_SECONDS = 60
