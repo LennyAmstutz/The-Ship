@@ -24,6 +24,6 @@ SCAN_QUEUE = "scanner"
 RABBITMQ_USER = "tags"
 RABBITMQ_PASS = "[administrator]"
 
-WHATSUPP_STATION = "G-Station 1-4"
+WHATSUPP_STATION = "G-Station 1-5"
 HOLD_SECONDS = 60
-HINT = {"x": -10503, "y": -12587}
+HINT = {"x": -19747, "y": -14282}
