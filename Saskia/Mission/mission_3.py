@@ -16,9 +16,11 @@ station_pos = None
 def watch_scanner():
     global station_pos
     for objects in detected_objects():
+        print("Scan empfangen:", objects)
         for obj in objects:
             if obj.get("name") == STATION:
                 station_pos = obj["pos"]
+                print("Station gefunden:", station_pos)
 
 
 def run():
