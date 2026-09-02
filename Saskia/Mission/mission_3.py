@@ -28,7 +28,9 @@ def run():
 
     while True:
         target = station_pos if station_pos else HINT
-        set_target(target)
+        print("Sende Ziel:", target, "| station_pos:", station_pos)
+        result = set_target(target)
+        print("Antwort set_target:", result)
 
         if STATION in stations_in_reach()["stations"]:
             if in_reach_since is None:
