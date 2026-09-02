@@ -1,6 +1,6 @@
 import json
 import pika
-from Saskia.config import consume_host, consume_port, RABBITMQ_USER, RABBITMQ_PASS
+from config import consume_host, consume_port, RABBITMQ_USER, RABBITMQ_PASS
 
 EXCHANGE = "scanner/detected_objects"
 
