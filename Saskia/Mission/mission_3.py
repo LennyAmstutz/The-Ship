@@ -3,13 +3,13 @@ import sys
 import threading
 import time
 
-from Saskia.config import HINT, HOLD_SECONDS, WHATSUPP_STATION
+from config import HINT, HOLD_SECONDS, WHATSUPP_STATION
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from Saskia.Actions.communication_commands import stations_in_reach
-from Saskia.Actions.scanner_commands import detected_objects
-from Saskia.Actions.steering_commands import set_target
+from Actions.communication_commands import stations_in_reach
+from Actions.scanner_commands import detected_objects
+from Actions.steering_commands import set_target
 
 station_pos = None
 
