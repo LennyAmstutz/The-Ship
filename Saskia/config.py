@@ -1,8 +1,6 @@
 # --- Verbinden ---------------------------------------------------------
 HOST = "192.168.101.51"
 consume_host = HOST
-consume_port = 2014
-
 
 command = {
     "buy": f"http://{HOST}:2011/buy",
