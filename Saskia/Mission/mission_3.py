@@ -3,12 +3,13 @@ import sys
 import threading
 import time
 
+from Saskia.config import HINT, HOLD_SECONDS, WHATSUPP_STATION
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from Actions.communication_commands import stations_in_reach
 from Actions.scanner_commands import detected_objects
 from Actions.steering_commands import set_target
-from config import WHATSUPP_STATION as STATION, HOLD_SECONDS, HINT
 
 station_pos = None
 
@@ -18,7 +19,7 @@ def watch_scanner():
     for objects in detected_objects():
         print("Scan empfangen:", objects)
         for obj in objects:
-            if obj.get("name") == STATION:
+            if obj.get("name") == WHATSUPP_STATION:
                 station_pos = obj["pos"]
                 print("Station gefunden:", station_pos)
 
