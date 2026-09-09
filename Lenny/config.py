@@ -31,11 +31,11 @@ HINT = {"x": -19747, "y": -14282}
 
 # --- Mission 4 ---------------------------------------------------------
 OAUTH = {
-    "token_url": "http://<AUTH_SERVER_HOST>:<PORT>/oauth/token",
-    "client_id": "<CLIENT_ID>",
-    "client_secret": "<CLIENT_SECRET>",
+    "token_url": "http://192.168.101.50:8080/realms/ship/protocol/openid-connect/token",
+    "client_id": "laser-client",
+    "client_secret": "fy5kdEw1HSB3hfwXWuKTGNnjaMRMhEIaqevyeIVW2inAgteeL8Mym3JTlhWoaHTzkoIfB0RpX2KGbEwWLau9M9",
     "grant_type": "client_credentials",
-    "scope": "laser:fire",
+    "scope": "",
 }
 
 MINE_TARGET = {"x": -18236, "y": -11783}
