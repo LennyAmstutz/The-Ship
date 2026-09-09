@@ -7,6 +7,7 @@ def _headers():
 
 def activate():
     response = requests.post(command["laser_activate"], headers=_headers())
+    print(response.status_code, response.text)
     response.raise_for_status()
     return response.json()
 
