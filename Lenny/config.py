@@ -36,7 +36,7 @@ HINT = {"x": -19747, "y": -14282}
 OAUTH = {
     "token_url": "http://192.168.101.50:8080/realms/ship/protocol/openid-connect/token",
     "client_id": "laser-client",
-    "client_secret": "fy5kdEw1HSB3hfwXWuKTGNnjaMRMhEIaqevyeIVW2inAgteeL8Mym3JTlhWoaHTzkoIfB0RpX2KGbEwWLau9M9",
+    "client_secret": "gsX3ggGNQTEpjraMHlFgN9svWPj1FHekOHGcSH082B1YIq5ifWbLatCKwj0cFMJG5ccnY8UfK7CfVEJz9CdbOv",
     "grant_type": "client_credentials",
     "scope": "",
 }
