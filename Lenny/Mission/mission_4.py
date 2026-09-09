@@ -5,20 +5,25 @@ import time
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from Actions.cargo_commands import hold
-from Actions.laser_commands import mine
+from Actions.laser_commands import activate, state
 from Actions.steering_commands import set_target, wait_until_in_reach
 from config import MINE_TARGET, STONE_AMOUNT, VESTA_STATION, VESTA_TARGET
 
 
 def mine_stone():
     set_target(MINE_TARGET)
+    activate()
+
     while True:
         status = hold()
-        stone = status["hold"]["resources"].get("STONE", 0)
+        resources = status["hold"]["resources"]
+        stone = resources.get("STONE", 0)
         print(f"[mission4] Stein im Hold: {stone}/{STONE_AMOUNT}")
+        print(f"[mission4] Laser-Status: {state()}")
+
         if stone >= STONE_AMOUNT:
             break
-        mine()
+
         time.sleep(1)
 
 

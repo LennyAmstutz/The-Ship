@@ -7,9 +7,12 @@ command = {
     "buy": f"http://{HOST}:2011/buy",
     "sell": f"http://{HOST}:2011/sell",
     "hold": f"http://{HOST}:2012/hold",
-    "set_target" : f"http://{HOST}:2009/set_target",
-    "stations_in_reach" : f"http://{HOST}:2011/stations_in_reach",
-    "mine": f"http://{HOST}:2018/mine",
+    "set_target": f"http://{HOST}:2009/set_target",
+    "stations_in_reach": f"http://{HOST}:2011/stations_in_reach",
+    "laser_activate": f"http://{HOST}:2018/activate",
+    "laser_deactivate": f"http://{HOST}:2018/deactivate",
+    "laser_angle": f"http://{HOST}:2018/angle",
+    "laser_state": f"http://{HOST}:2018/state",
 }
 
 # --- Mission 1 ---------------------------------------------------------
