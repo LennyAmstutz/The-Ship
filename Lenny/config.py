@@ -35,7 +35,7 @@ HINT = {"x": -19747, "y": -14282}
 # --- Mission 4 ---------------------------------------------------------
 OAUTH = {
     "token_url": "http://192.168.101.50:8080/realms/ship/protocol/openid-connect/token",
-    "client_id": "laser-client",
+    "client_id": "laser",
     "client_secret": "gsX3ggGNQTEpjraMHlFgN9svWPj1FHekOHGcSH082B1YIq5ifWbLatCKwj0cFMJG5ccnY8UfK7CfVEJz9CdbOv",
     "grant_type": "client_credentials",
     "scope": "",
