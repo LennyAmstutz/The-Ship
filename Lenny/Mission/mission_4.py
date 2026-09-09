@@ -5,14 +5,13 @@ import time
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from Actions.cargo_commands import hold
-from Actions.laser_commands import activate, state
+from Actions.laser_commands import activate, set_angle, state
 from Actions.steering_commands import set_target, wait_until_in_reach
 from config import MINE_TARGET, STONE_AMOUNT, VESTA_STATION, VESTA_TARGET
 
 
 def mine_stone():
     set_target(MINE_TARGET)
-    set_angle(angle)
     activate()
 
     while True:
