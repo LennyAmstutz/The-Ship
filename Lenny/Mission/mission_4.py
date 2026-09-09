@@ -14,9 +14,9 @@ def mine_stone():
     set_target(MINE_TARGET)
     while True:
         status = hold()
-        used = status.get("used", 0)
-        print(f"[mission4] Stein im Hold: {used}/{STONE_AMOUNT}")
-        if used >= STONE_AMOUNT:
+        stone = status["hold"]["resources"].get("STONE", 0)
+        print(f"[mission4] Stein im Hold: {stone}/{STONE_AMOUNT}")
+        if stone >= STONE_AMOUNT:
             break
         mine()
         time.sleep(1)
