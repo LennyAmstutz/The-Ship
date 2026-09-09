@@ -12,6 +12,7 @@ from config import MINE_TARGET, STONE_AMOUNT, VESTA_STATION, VESTA_TARGET
 
 def mine_stone():
     set_target(MINE_TARGET)
+    set_angle(angle)
     activate()
 
     while True:
