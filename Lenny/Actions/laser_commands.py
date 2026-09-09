@@ -19,6 +19,8 @@ def _get_token():
             "scope": OAUTH.get("scope", ""),
         },
     )
+    if response.status_code != 200:
+        print("KEYCLOAK ERROR:", response.status_code, response.text)
     response.raise_for_status()
     payload = response.json()
 
