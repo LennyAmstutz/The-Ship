@@ -10,15 +10,15 @@ def _get_token():
     if _token and time.time() < _token_expires_at - 5:
         return _token
 
-    response = requests.post(
-        OAUTH["token_url"],
-        data={
-            "grant_type": OAUTH["grant_type"],
-            "client_id": OAUTH["client_id"],
-            "client_secret": OAUTH["client_secret"],
-            "scope": OAUTH.get("scope", ""),
-        },
-    )
+    data = {
+        "grant_type": OAUTH["grant_type"],
+        "client_id": OAUTH["client_id"],
+        "client_secret": OAUTH["client_secret"],
+    }
+    if OAUTH.get("scope"):
+        data["scope"] = OAUTH["scope"]
+
+    response = requests.post(OAUTH["token_url"], data=data)
     if response.status_code != 200:
         print("KEYCLOAK ERROR:", response.status_code, response.text)
     response.raise_for_status()
