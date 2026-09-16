@@ -1,7 +1,9 @@
 # --- Verbinden ---------------------------------------------------------
 HOST = "192.168.101.51"
 consume_host = HOST
+PARTNER_HOST = "192.168.101.50"
 consume_port = 2014
+PARTNER_RELAY_PORT = 5001
 
 command = {
     "buy": f"http://{HOST}:2011/buy",
@@ -10,6 +12,8 @@ command = {
     "set_target" : f"http://{HOST}:2009/set_target",
     "pos" :  f"http://{HOST}:2011/pos",
     "stations_in_reach" : f"http://{HOST}:2011/stations_in_reach",
+    "comm_elyse_ws": f"ws://{HOST}:2026/api",
+    "partner_relay": f"http://{PARTNER_HOST}:{PARTNER_RELAY_PORT}/relay",
 }
 
 # --- Mission 1 ---------------------------------------------------------
@@ -19,7 +23,19 @@ BUY_STATION = "Azura Station"
 SELL_STATION = "Core Station"
 
 # --- Mission 2 ---------------------------------------------------------
+COMM_MODULE_ELYSE_PORT = 2026
 
+ELYSE_STATION = "Elyse Terminal"
+SHANGRIS_STATION = "Shangris Station"
+
+ELYSE_TARGET = {"x": -70565, "y": 72811}
+SHANGRIS_TARGET = {"x": 4446, "y": 4340}
+
+MISSION2_MAX_GAP = 3
+MISSION2_HOLD_SECONDS = 20
+
+OWN_RELAY_HOST = "0.0.0.0"
+OWN_RELAY_PORT = 5001
 
 # --- Mission 3 ---------------------------------------------------------
 SCAN_QUEUE = "scanner"
