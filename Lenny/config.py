@@ -1,6 +1,6 @@
 # --- Verbinden ---------------------------------------------------------
 HOST = "192.168.101.50"
-PARTNER_HOST = "192.168.101.51"
+PARTNER_HOST = "91.92.203.202"
 consume_host = HOST
 consume_port = 2014
 PARTNER_RELAY_PORT = 5001
