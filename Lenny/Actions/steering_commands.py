@@ -13,6 +13,11 @@ def set_target(target):
     response.raise_for_status()
     return response.json()
 
+def position():
+    response = requests.get(command["pos"])
+    response.raise_for_status()
+    return response.json()["pos"]
+
 def wait_until_in_reach(station_name, timeout=60):
     waited = 0
     stations = stations_in_reach()["stations"]

@@ -49,14 +49,14 @@ WHATSUPP_STATION = "G-Station 1-5"
 HOLD_SECONDS = 60
 HINT = {"x": -19747, "y": -14282}
 
-# --- Mission 4 ---------------------------------------------------------
-OAUTH = {
-    "token_url": "http://192.168.101.50:8080/realms/ship/protocol/openid-connect/token",
-    "client_id": "laser",
-    "client_secret": "gsX3ggGNQTEpjraMHlFgN9svWPj1FHekOHGcSH082B1YIq5ifWbLatCKwj0cFMJG5ccnY8UfK7CfVEJz9CdbOv",
-    "grant_type": "client_credentials",
-    "scope": "",
-}
+# --- Mission 4 -----------------------------------------------------------
+KEYCLOAK_BASE = "http://192.168.101.50:8080/realms/ship/protocol/openid-connect"
+AUTHORIZE_URL = f"{KEYCLOAK_BASE}/auth"
+TOKEN_URL = f"{KEYCLOAK_BASE}/token"
+LASER_CLIENT_SECRET = "gsX3ggGNQTEpjraMHlFgN9svWPj1FHekOHGcSH082B1YIq5ifWbLatCKwj0cFMJG5ccnY8UfK7CfVEJz9CdbOv"
+
+TECH_USERNAME = "TODO_USERNAME"
+TECH_PASSWORD = "TODO_PASSWORD"
 
 MINE_TARGET = {"x": -18236, "y": -11783}
 STONE_RESOURCE = "STONE"
@@ -64,3 +64,8 @@ STONE_AMOUNT = 12
 
 VESTA_STATION = "Vesta Station"
 VESTA_TARGET = {"x": 7000, "y": 7000}
+
+MINING_STANDOFF = 300
+ARRIVAL_RADIUS = 20
+ANGLE_STEP = 6
+LASER_BURN_SECONDS = 8

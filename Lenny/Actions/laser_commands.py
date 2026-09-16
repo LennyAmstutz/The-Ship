@@ -1,27 +1,26 @@
-import requests
 from config import command
-from auth import get_access_token
+from auth import SESSION
 
-def _headers():
-    return {"Authorization": f"Bearer {get_access_token()}"}
 
 def activate():
-    response = requests.post(command["laser_activate"], headers=_headers())
-    print(response.status_code, response.text)
+    response = SESSION.post(command["laser_activate"])
     response.raise_for_status()
     return response.json()
+
 
 def deactivate():
-    response = requests.post(command["laser_deactivate"], headers=_headers())
+    response = SESSION.post(command["laser_deactivate"])
     response.raise_for_status()
     return response.json()
+
 
 def set_angle(angle):
-    response = requests.put(command["laser_angle"], json={"angle": angle}, headers=_headers())
+    response = SESSION.put(command["laser_angle"], json={"angle": angle})
     response.raise_for_status()
     return response.json()
 
+
 def state():
-    response = requests.get(command["laser_state"], headers=_headers())
+    response = SESSION.get(command["laser_state"])
     response.raise_for_status()
     return response.json()
