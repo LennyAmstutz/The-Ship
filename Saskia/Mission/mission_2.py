@@ -12,7 +12,7 @@ from Actions.steering_commands import set_target, wait_until_in_reach
 from relay_server import start_relay_server, inbox
 from config import (
     MISSION2_MAX_GAP,
-    MISSION2_HOLD_SECONDS, command, SHANGRIS_STATION, SHANGRIS_TARGET,
+    MISSION2_HOLD_SECONDS, command, ELYSE_STATION, SHANGRIS_STATION, SHANGRIS_TARGET,
 )
 
 
@@ -32,7 +32,7 @@ def listen_own_module():
             continue
 
         print("[mission2] Vom eigenen Comm-Modul erhalten:", message)
-        if message.get("source") == SHANGRIS_STATION:
+        if message.get("destination") == ELYSE_STATION:
             try:
                 forward_to_partner(message)
                 print("[mission2] Shangris -> Elyse weitergeleitet:", message)

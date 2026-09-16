@@ -11,15 +11,17 @@ from Actions.comm_module_commands import connect, receive_message, send_message
 from Actions.steering_commands import set_target, wait_until_in_reach
 from relay_server import start_relay_server, inbox
 from config import (
+    command,
     ELYSE_STATION,
     ELYSE_TARGET,
+    SHANGRIS_STATION,
     MISSION2_MAX_GAP,
     MISSION2_HOLD_SECONDS,
 )
 
 
 def forward_to_partner(message):
-    response = requests.post(command["partner_relay"], json=message, timeout=5)  # statt PARTNER_RELAY_URL
+    response = requests.post(command["partner_relay"], json=message, timeout=5)
     response.raise_for_status()
 
 
@@ -34,7 +36,7 @@ def listen_own_module():
             continue
 
         print("[mission2] Vom eigenen Comm-Modul erhalten:", message)
-        if message.get("source") == ELYSE_STATION:
+        if message.get("destination") == SHANGRIS_STATION:
             try:
                 forward_to_partner(message)
                 print("[mission2] Elyse -> Shangris weitergeleitet:", message)
