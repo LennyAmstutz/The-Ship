@@ -52,11 +52,8 @@ class _Laser:
 
 
 def _search_angle(laser, last_hit=None):
-    """Schwenkt rundum, bis der Strahl den Felsen trifft. Gibt den Winkel
-    zurueck oder None, wenn eine volle Runde nichts getroffen hat."""
     candidates = list(range(0, 360, ANGLE_STEP))
     if last_hit is not None:
-        # Beim Nachjustieren zuerst in der Naehe des letzten Treffers suchen.
         candidates.sort(key=lambda a: min(abs(a - last_hit), 360 - abs(a - last_hit)))
 
     for angle in candidates:
