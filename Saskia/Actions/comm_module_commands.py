@@ -13,22 +13,37 @@ def connect():
     return _ws
 
 
-def receive_message():
-    if _ws is None:
+def _ensure_connected():
+    global _ws
+    if _ws is None or not _ws.connected:
         connect()
-    raw = _ws.recv()
+
+
+def receive_message():
+    _ensure_connected()
+    try:
+        raw = _ws.recv()
+    except Exception:
+        connect()
+        raw = _ws.recv()
     return json.loads(raw)
 
 
 def send_message(msg, destination=SHANGRIS_STATION):
-    if _ws is None:
+    _ensure_connected()
+    payload = {"destination": destination, "data": msg}
+    try:
+        _ws.send(json.dumps(payload))
+    except Exception:
         connect()
-    payload = {"destination": destination, "msg": msg}
-    _ws.send(json.dumps(payload))
+        _ws.send(json.dumps(payload))
 
 
 def close():
     global _ws
     if _ws is not None:
-        _ws.close()
+        try:
+            _ws.close()
+        except Exception:
+            pass
         _ws = None

@@ -11,13 +11,17 @@ from Actions.comm_module_commands import connect, receive_message, send_message
 from Actions.steering_commands import set_target, wait_until_in_reach
 from relay_server import start_relay_server, inbox
 from config import (
+    command,
+    ELYSE_STATION,
+    SHANGRIS_STATION,
+    SHANGRIS_TARGET,
     MISSION2_MAX_GAP,
-    MISSION2_HOLD_SECONDS, command, ELYSE_STATION, SHANGRIS_STATION, SHANGRIS_TARGET,
+    MISSION2_HOLD_SECONDS,
 )
 
 
 def forward_to_partner(message):
-    response = requests.post(command["partner_relay"], json=message, timeout=5)  
+    response = requests.post(command["partner_relay"], json=message, timeout=5)
     response.raise_for_status()
 
 
@@ -54,9 +58,10 @@ def run():
     while True:
         while not inbox.empty():
             incoming = inbox.get()
+            payload = incoming.get("msg", incoming.get("data"))
             try:
-                send_message(incoming.get("msg"), destination=SHANGRIS_STATION)
-                print("[mission2] Shangris -> Elyse zugestellt:", incoming)
+                send_message(payload, destination=SHANGRIS_STATION)
+                print("[mission2] Elyse -> Shangris zugestellt:", incoming)
             except Exception as exc:
                 print("[mission2] Fehler beim Zustellen ans eigene Comm-Modul:", exc)
 

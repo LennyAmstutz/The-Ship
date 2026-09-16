@@ -58,8 +58,9 @@ def run():
     while True:
         while not inbox.empty():
             incoming = inbox.get()
+            payload = incoming.get("msg", incoming.get("data"))
             try:
-                send_message(incoming.get("msg"), destination=ELYSE_STATION)
+                send_message(payload, destination=ELYSE_STATION)
                 print("[mission2] Shangris -> Elyse zugestellt:", incoming)
             except Exception as exc:
                 print("[mission2] Fehler beim Zustellen ans eigene Comm-Modul:", exc)
