@@ -2,13 +2,14 @@ import json
 
 import websocket
 
-from config import ELYSE_STATION, command
+from config import command, SHANGRIS_STATION
+
 _ws = None
 
 
 def connect():
     global _ws
-    _ws = websocket.create_connection(command["comm_elyse_ws"])
+    _ws = websocket.create_connection(command["comm_shangris_ws"])
     return _ws
 
 
@@ -19,7 +20,7 @@ def receive_message():
     return json.loads(raw)
 
 
-def send_message(msg, destination=ELYSE_STATION):
+def send_message(msg, destination=SHANGRIS_STATION):
     if _ws is None:
         connect()
     payload = {"destination": destination, "msg": msg}

@@ -12,7 +12,7 @@ command = {
     "set_target" : f"http://{HOST}:2009/set_target",
     "pos" :  f"http://{HOST}:2011/pos",
     "stations_in_reach" : f"http://{HOST}:2011/stations_in_reach",
-    "comm_elyse_ws": f"ws://{HOST}:2026/api",
+    "comm_shangris_ws": f"ws://{HOST}:2025/ws",
     "partner_relay": f"http://{PARTNER_HOST}:{PARTNER_RELAY_PORT}/relay",
 }
 
@@ -23,7 +23,7 @@ BUY_STATION = "Azura Station"
 SELL_STATION = "Core Station"
 
 # --- Mission 2 ---------------------------------------------------------
-COMM_MODULE_ELYSE_PORT = 2026
+COMM_MODULE_SHANGRIS_PORT = 2025
 
 ELYSE_STATION = "Elyse Terminal"
 SHANGRIS_STATION = "Shangris Station"
@@ -35,7 +35,7 @@ MISSION2_MAX_GAP = 3
 MISSION2_HOLD_SECONDS = 20
 
 OWN_RELAY_HOST = "0.0.0.0"
-OWN_RELAY_PORT = 5001
+OWN_RELAY_PORT = 5002
 
 # --- Mission 3 ---------------------------------------------------------
 SCAN_QUEUE = "scanner"
