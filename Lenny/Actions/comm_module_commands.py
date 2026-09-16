@@ -2,14 +2,14 @@ import json
 
 import websocket
 
-from config import COMM_MODULE_ELYSE_WS_URL, ELYSE_STATION
+from config import ELYSE_STATION, command
 
 _ws = None
 
 
 def connect():
     global _ws
-    _ws = websocket.create_connection(COMM_MODULE_ELYSE_WS_URL)
+    _ws = websocket.create_connection(command["comm_elyse_ws"])
     return _ws
 
 
