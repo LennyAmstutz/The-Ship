@@ -15,12 +15,11 @@ from config import (
     ELYSE_TARGET,
     MISSION2_MAX_GAP,
     MISSION2_HOLD_SECONDS,
-    PARTNER_RELAY_URL,
 )
 
 
 def forward_to_partner(message):
-    response = requests.post(PARTNER_RELAY_URL, json=message, timeout=5)
+    response = requests.post(command["partner_relay"], json=message, timeout=5)  
     response.raise_for_status()
 
 
