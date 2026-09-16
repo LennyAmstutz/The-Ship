@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import requests
 
 from Actions.comm_module_commands import connect, receive_message, send_message
+from Actions.communication_commands import stations_in_reach
 from Actions.steering_commands import set_target, wait_until_in_reach
 from relay_server import start_relay_server, inbox
 from config import (
@@ -56,6 +57,16 @@ def run():
     started = time.monotonic()
 
     while True:
+        try:
+            stations = stations_in_reach().get("stations", [])
+            if ELYSE_STATION not in stations:
+                print(f"[mission2] WARNUNG: nicht mehr in Reichweite von {ELYSE_STATION}! stations={stations} -> Ziel neu setzen")
+                set_target(ELYSE_TARGET)
+            else:
+                print(f"[mission2] Reichweite ok, in stations={stations}")
+        except Exception as exc:
+            print("[mission2] Fehler beim Reichweite-Check:", exc)
+
         while not inbox.empty():
             incoming = inbox.get()
             payload = incoming.get("msg", incoming.get("data"))
