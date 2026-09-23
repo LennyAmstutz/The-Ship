@@ -1,62 +1,92 @@
 import json
+import threading
+import time
 
 import websocket
 
-from config import command, ELYSE_STATION
+from config import command, COMM_KEY
 
-_ws_recv = None
-_ws_send = None
-
-
-def _connect_recv():
-    global _ws_recv
-    _ws_recv = websocket.create_connection(command["comm_elyse_ws"])
-    return _ws_recv
+# Eine einzige Verbindung fuers Senden UND Empfangen. Das Comm-Modul ist nur offen,
+# solange die Station in Reichweite ist - darum wird bei jedem Fehler neu verbunden.
+_lock = threading.Lock()
+_ws = None
+_connected_since = 0.0
+_sent_count = 0
 
 
-def _connect_send():
-    global _ws_send
-    _ws_send = websocket.create_connection(command["comm_elyse_ws"])
-    return _ws_send
+def _connect():
+    global _ws, _connected_since, _sent_count
+    with _lock:
+        while _ws is None:
+            try:
+                _ws = websocket.create_connection(command["comm_elyse_ws"])
+                _connected_since = time.monotonic()
+                _sent_count = 0
+                print("[comm] Comm-Modul verbunden", flush=True)
+            except OSError:
+                print("[comm] Comm-Modul noch zu, naechster Versuch", flush=True)
+                time.sleep(2)
+        return _ws
+
+
+def _drop(broken):
+    global _ws
+    with _lock:
+        if _ws is broken:
+            print(f"[comm]  (hielt {time.monotonic() - _connected_since:.1f}s, "
+                  f"{_sent_count} Nachrichten gesendet)", flush=True)
+            try:
+                broken.close()
+            except Exception:
+                pass
+            _ws = None
 
 
 def connect():
-    """Baut beide Verbindungen auf (getrennt fuer Senden/Empfangen)."""
-    _connect_recv()
-    _connect_send()
+    _connect()
+
+
+def payload(message):
+    """Inhalt einer Nachricht - je nach Station unter "msg" oder "data"."""
+    return message.get("msg", message.get("data"))
 
 
 def receive_message():
-    global _ws_recv
-    if _ws_recv is None or not _ws_recv.connected:
-        _connect_recv()
-    try:
-        raw = _ws_recv.recv()
-    except Exception:
-        _connect_recv()
-        raw = _ws_recv.recv()
-    return json.loads(raw)
+    """Wartet auf die naechste Nachricht vom eigenen Comm-Modul."""
+    while True:
+        current = _connect()
+        try:
+            raw = current.recv()
+        except Exception as exc:
+            print("[comm] Station weg beim Lesen:", type(exc).__name__, flush=True)
+            _drop(current)
+            continue
+
+        if isinstance(raw, bytes):
+            raw = raw.decode("utf-8")
+        if raw.strip():
+            return json.loads(raw)
 
 
-def send_message(msg, destination=ELYSE_STATION):
-    global _ws_send
-    if _ws_send is None or not _ws_send.connected:
-        _connect_send()
-    payload = {"destination": destination, "msg": msg}
+def send_message(msg, source):
+    """Stellt eine Nachricht ans eigene Comm-Modul zu, mit der Station, von der sie kommt."""
+    global _sent_count
+    current = _connect()
     try:
-        _ws_send.send(json.dumps(payload))
-    except Exception:
-        _connect_send()
-        _ws_send.send(json.dumps(payload))
+        current.send(json.dumps({"source": source, COMM_KEY: msg}))
+        _sent_count += 1
+    except Exception as exc:
+        print("[comm] Station weg beim Senden:", type(exc).__name__, flush=True)
+        _drop(current)
+        raise
 
 
 def close():
-    global _ws_recv, _ws_send
-    for ws in (_ws_recv, _ws_send):
-        if ws is not None:
+    global _ws
+    with _lock:
+        if _ws is not None:
             try:
-                ws.close()
+                _ws.close()
             except Exception:
                 pass
-    _ws_recv = None
-    _ws_send = None
+        _ws = None

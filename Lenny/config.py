@@ -1,15 +1,35 @@
+import socket
+
 # --- Verbinden ---------------------------------------------------------
-HOST = "192.168.101.50"
+HOST = "192.168.101.50"          # IP vom eigenen SCHIFF (nicht vom Laptop!)
 consume_host = HOST
 consume_port = 2014
-PARTNER_HOST = "192.168.101.51"
+
+# Wichtig: Ship-IP != Rechner-IP.
+# Der Relay-Server vom Partner laeuft auf SASKIAS LAPTOP, nicht auf ihrem Schiff (.51).
+# Saskia findet ihre Laptop-IP mit "ipconfig" (Windows) bzw. "ip a" (Linux/Mac),
+# die Adresse im Netz 192.168.101.x nehmen.
+PARTNER_HOST = "TODO_SASKIA_LAPTOP_IP"
 PARTNER_RELAY_PORT = 5002
+
+
+def _own_laptop_ip():
+    """IP von diesem Laptop, ueber die das Schiff uns erreicht (fuer den OAuth-Server)."""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
+            probe.connect((HOST, 2009))
+            return probe.getsockname()[0]
+    except OSError:
+        return "127.0.0.1"
+
+
+OWN_LAPTOP_IP = _own_laptop_ip()
 
 command = {
     "buy": f"http://{HOST}:2011/buy",
     "sell": f"http://{HOST}:2011/sell",
     "hold": f"http://{HOST}:2012/hold",
-    "pos": f"http://{HOST}:2010/pos",
+    "pos": f"http://{HOST}:2011/pos",
     "set_target": f"http://{HOST}:2009/set_target",
     "stations_in_reach": f"http://{HOST}:2011/stations_in_reach",
     "laser_configure_oauth": f"http://{HOST}:2018/configure_oauth",
@@ -29,16 +49,16 @@ BUY_STATION = "Azura Station"
 SELL_STATION = "Core Station"
 
 # --- Mission 2 ---------------------------------------------------------
-COMM_MODULE_ELYSE_PORT = 2026
-
 ELYSE_STATION = "Elyse Terminal"
 SHANGRIS_STATION = "Shangris Station"
 
 ELYSE_TARGET = {"x": -70565, "y": 72811}
 SHANGRIS_TARGET = {"x": 4446, "y": 4340}
 
-MISSION2_MAX_GAP = 3
-MISSION2_HOLD_SECONDS = 20
+# Elyse Terminal nimmt den Inhalt unter "msg" an (Shangris unter "data").
+COMM_KEY = "msg"
+SEND_PAUSE = 1.0            # hoechstens 1 Nachricht pro Sekunde ans Comm-Modul
+RANGE_CHECK_SECONDS = 2
 
 OWN_RELAY_HOST = "0.0.0.0"
 OWN_RELAY_PORT = 5001
@@ -53,22 +73,21 @@ HOLD_SECONDS = 60
 HINT = {"x": -19747, "y": -14282}
 
 # --- Mission 4 -----------------------------------------------------------
-KEYCLOAK_BASE = "http://192.168.101.50:8080/realms/ship/protocol/openid-connect"
-AUTHORIZE_URL = f"{KEYCLOAK_BASE}/auth"
-TOKEN_URL = f"{KEYCLOAK_BASE}/token"
-LASER_CLIENT_SECRET = "gsX3ggGNQTEpjraMHlFgN9svWPj1FHekOHGcSH082B1YIq5ifWbLatCKwj0cFMJG5ccnY8UfK7CfVEJz9CdbOv"
-
-TECH_USERNAME = "TODO_USERNAME"
-TECH_PASSWORD = "TODO_PASSWORD"
+# Eigener OAuth-Server (oauth_server.py) laeuft auf diesem Laptop.
+OAUTH_HOST = OWN_LAPTOP_IP
+OAUTH_PORT = 2015
+AUTHORIZE_URL = f"http://{OAUTH_HOST}:{OAUTH_PORT}/authorize"
+TOKEN_URL = f"http://{OAUTH_HOST}:{OAUTH_PORT}/token"
+LASER_CLIENT_ID = "laser"
+LASER_CLIENT_SECRET = "meinLaserSecret123"
 
 MINE_TARGET = {"x": -18236, "y": -11783}
 STONE_RESOURCE = "STONE"
-STONE_AMOUNT = 12
 
 VESTA_STATION = "Vesta Station"
 VESTA_TARGET = {"x": 7000, "y": 7000}
 
-MINING_STANDOFF = 300
-ARRIVAL_RADIUS = 20
-ANGLE_STEP = 6
-LASER_BURN_SECONDS = 8
+MINING_STANDOFF = 120
+ARRIVAL_RADIUS = 15
+ANGLE_STEP = 5
+LASER_POLL_SECONDS = 2
