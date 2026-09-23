@@ -7,17 +7,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import requests
 
-from Actions.comm_module_commands import connect, receive_message, send_message
+from Actions.comm_module_commands import connect, payload, receive_message, send_message
 from Actions.communication_commands import stations_in_reach
 from Actions.steering_commands import set_target, wait_until_in_reach
 from relay_server import start_relay_server, inbox
 from config import (
     command,
-    ELYSE_STATION,
     SHANGRIS_STATION,
     SHANGRIS_TARGET,
-    MISSION2_MAX_GAP,
-    MISSION2_HOLD_SECONDS,
+    ELYSE_STATION,
+    SEND_PAUSE,
+    RANGE_CHECK_SECONDS,
 )
 
 
@@ -26,60 +26,63 @@ def forward_to_partner(message):
     response.raise_for_status()
 
 
-def listen_own_module():
-    connect()
+def fly_to_shangris():
+    set_target(SHANGRIS_TARGET)
+    print("[mission2] unterwegs zu", SHANGRIS_STATION)
+    wait_until_in_reach(SHANGRIS_STATION, timeout=None)
+    print("[mission2] In Reichweite von", SHANGRIS_STATION)
+
+
+def stay_in_range():
     while True:
         try:
-            message = receive_message()
+            if SHANGRIS_STATION not in stations_in_reach()["stations"]:
+                print("[mission2] abgedriftet, Kurs neu setzen", flush=True)
+                set_target(SHANGRIS_TARGET)
         except Exception as exc:
-            print("[mission2] Fehler beim Empfangen vom eigenen Comm-Modul:", exc)
-            time.sleep(1)
-            continue
+            print("[mission2] Fehler beim Reichweite-Check:", exc)
+        time.sleep(RANGE_CHECK_SECONDS)
 
-        print("[mission2] Vom eigenen Comm-Modul erhalten:", message)
-        if message.get("destination") == ELYSE_STATION:
-            try:
-                forward_to_partner(message)
-                print("[mission2] Shangris -> Elyse weitergeleitet:", message)
-            except Exception as exc:
-                print("[mission2] Fehler beim Weiterleiten an Partner:", exc)
+
+def shangris_to_partner():
+    """Alles, was Shangris sendet, geht an Lenny (Elyse) weiter."""
+    while True:
+        message = receive_message()
+        forward = {"source": SHANGRIS_STATION, "msg": payload(message)}
+        try:
+            forward_to_partner(forward)
+            print("[mission2] Shangris -> Elyse weitergeleitet:", forward)
+        except Exception as exc:
+            print("[mission2] Fehler beim Weiterleiten an Partner:", exc)
+
+
+def partner_to_shangris():
+    """Nachrichten vom Partner ans eigene Comm-Modul. Staut sich etwas an,
+    wird nur die neueste zugestellt - sonst wirft die Station uns raus."""
+    while True:
+        incoming = inbox.get()
+        while not inbox.empty():
+            incoming = inbox.get()
+
+        source = incoming.get("source", ELYSE_STATION)
+        try:
+            send_message(payload(incoming), source=source)
+            print("[mission2] Elyse -> Shangris zugestellt:", incoming)
+        except Exception as exc:
+            print("[mission2] Fehler beim Zustellen ans eigene Comm-Modul:", exc)
+
+        time.sleep(SEND_PAUSE)
 
 
 def run():
     start_relay_server()
 
-    set_target(SHANGRIS_TARGET)
-    wait_until_in_reach(SHANGRIS_STATION, timeout=None)
-    print("[mission2] In Reichweite von", SHANGRIS_STATION)
+    fly_to_shangris()
+    threading.Thread(target=stay_in_range, daemon=True).start()
 
-    threading.Thread(target=listen_own_module, daemon=True).start()
-
-    started = time.monotonic()
-
-    while True:
-        try:
-            stations = stations_in_reach().get("stations", [])
-            if SHANGRIS_STATION not in stations:
-                print(f"[mission2] WARNUNG: nicht mehr in Reichweite von {SHANGRIS_STATION}! stations={stations} -> Ziel neu setzen")
-                set_target(SHANGRIS_TARGET)
-            else:
-                print(f"[mission2] Reichweite ok, in stations={stations}")
-        except Exception as exc:
-            print("[mission2] Fehler beim Reichweite-Check:", exc)
-
-        while not inbox.empty():
-            incoming = inbox.get()
-            payload = incoming.get("msg", incoming.get("data"))
-            try:
-                send_message(payload, destination=SHANGRIS_STATION)
-                print("[mission2] Elyse -> Shangris zugestellt:", incoming)
-            except Exception as exc:
-                print("[mission2] Fehler beim Zustellen ans eigene Comm-Modul:", exc)
-
-        elapsed = time.monotonic() - started
-        print(f"[mission2] laeuft seit {elapsed:.1f}s (Ziel: {MISSION2_HOLD_SECONDS}s am Stueck)")
-
-        time.sleep(max(0.5, MISSION2_MAX_GAP - 2))
+    connect()
+    threading.Thread(target=shangris_to_partner, daemon=True).start()
+    partner_to_shangris()
 
 
 if __name__ == "__main__":
