@@ -1,14 +1,10 @@
 import socket
 
 # --- Verbinden ---------------------------------------------------------
-HOST = "192.168.101.50"          # IP vom eigenen SCHIFF (nicht vom Laptop!)
+HOST = "192.168.101.50"
 consume_host = HOST
 consume_port = 2014
 
-# Wichtig: Ship-IP != Rechner-IP.
-# Der Relay-Server vom Partner laeuft auf SASKIAS LAPTOP, nicht auf ihrem Schiff (.51).
-# Saskia findet ihre Laptop-IP mit "ipconfig" (Windows) bzw. "ip a" (Linux/Mac),
-# die Adresse im Netz 192.168.101.x nehmen.
 PARTNER_HOST = "TODO_SASKIA_LAPTOP_IP"
 PARTNER_RELAY_PORT = 5002
 
@@ -55,9 +51,8 @@ SHANGRIS_STATION = "Shangris Station"
 ELYSE_TARGET = {"x": -70565, "y": 72811}
 SHANGRIS_TARGET = {"x": 4446, "y": 4340}
 
-# Elyse Terminal nimmt den Inhalt unter "msg" an (Shangris unter "data").
 COMM_KEY = "msg"
-SEND_PAUSE = 1.0            # hoechstens 1 Nachricht pro Sekunde ans Comm-Modul
+SEND_PAUSE = 1.0
 RANGE_CHECK_SECONDS = 2
 
 OWN_RELAY_HOST = "0.0.0.0"
@@ -73,7 +68,6 @@ HOLD_SECONDS = 60
 HINT = {"x": -19747, "y": -14282}
 
 # --- Mission 4 -----------------------------------------------------------
-# Eigener OAuth-Server (oauth_server.py) laeuft auf diesem Laptop.
 OAUTH_HOST = OWN_LAPTOP_IP
 OAUTH_PORT = 2015
 AUTHORIZE_URL = f"http://{OAUTH_HOST}:{OAUTH_PORT}/authorize"
