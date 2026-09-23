@@ -1,5 +1,3 @@
-import socket
-
 # --- Verbinden ---------------------------------------------------------
 HOST = "192.168.101.51"
 consume_host = HOST
@@ -8,18 +6,6 @@ consume_port = 2014
 PARTNER_HOST = "192.168.101.50"
 PARTNER_RELAY_PORT = 5001
 
-
-def _own_laptop_ip():
-    """IP von diesem Laptop, ueber die das Schiff uns erreicht (fuer den OAuth-Server)."""
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
-            probe.connect((HOST, 2009))
-            return probe.getsockname()[0]
-    except OSError:
-        return "127.0.0.1"
-
-
-OWN_LAPTOP_IP = _own_laptop_ip()
 
 command = {
     "buy": f"http://{HOST}:2011/buy",
@@ -68,8 +54,10 @@ HOLD_SECONDS = 60
 HINT = {"x": -19747, "y": -14282}
 
 # --- Mission 4 -----------------------------------------------------------
-OAUTH_HOST = OWN_LAPTOP_IP
-OAUTH_PORT = 2015
+# Der OAuth-Server laeuft zusammen mit diesem Code auf der Schiff-VM.
+# Port 2015 ist dort vom RabbitMQ-Dashboard belegt, darum 5015.
+OAUTH_HOST = HOST
+OAUTH_PORT = 5015
 AUTHORIZE_URL = f"http://{OAUTH_HOST}:{OAUTH_PORT}/authorize"
 TOKEN_URL = f"http://{OAUTH_HOST}:{OAUTH_PORT}/token"
 LASER_CLIENT_ID = "laser"
