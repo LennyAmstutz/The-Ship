@@ -12,3 +12,6 @@ def stone_count():
 
 def free_space():
     return hold()["hold"]["hold_free"]
+
+def hold_size():
+    return hold()["hold"]["hold_size"]

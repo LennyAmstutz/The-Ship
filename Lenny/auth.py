@@ -1,14 +1,13 @@
-import re
+import webbrowser
 
 import requests
 
-from config import AUTHORIZE_URL, LASER_CLIENT_SECRET, TECH_PASSWORD, TECH_USERNAME, TOKEN_URL, command
-
-SESSION = requests.Session()
+from config import AUTHORIZE_URL, LASER_CLIENT_SECRET, TOKEN_URL, command
+from oauth_server import start_oauth_server
 
 
 def _configure_oauth():
-    response = SESSION.post(command["laser_configure_oauth"], json={
+    response = requests.post(command["laser_configure_oauth"], json={
         "client_secret": LASER_CLIENT_SECRET,
         "authorize_url": AUTHORIZE_URL,
         "token_url": TOKEN_URL,
@@ -18,20 +17,11 @@ def _configure_oauth():
 
 
 def login():
-    _configure_oauth()
+    start_oauth_server()
+    print("[auth] OAuth:", _configure_oauth())
+    print(f"[auth] OAuth-Server: {AUTHORIZE_URL} / {TOKEN_URL}")
 
-    login_page = SESSION.get(command["laser_login"])
-    login_page.raise_for_status()
-
-    match = re.search(r'action="([^"]+)"', login_page.text)
-    if not match:
-        raise RuntimeError("Login-Formular nicht gefunden - Keycloak-Loginseite hat sich vermutlich geaendert.")
-    form_action = match.group(1).replace("&amp;", "&")
-
-    response = SESSION.post(form_action, data={
-        "username": TECH_USERNAME,
-        "password": TECH_PASSWORD,
-    })
-    response.raise_for_status()
-    print(f"[auth] Login-Antwort {response.status_code}: {response.text[:200]!r}")
-    return response
+    url = command["laser_login"]
+    print("[auth] OAuth Login wird geoeffnet:", url)
+    webbrowser.open(url)
+    input("[auth] Im Browser anmelden und danach hier ENTER druecken ...")
