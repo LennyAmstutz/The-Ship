@@ -73,3 +73,15 @@ MINING_STANDOFF = 120
 ARRIVAL_RADIUS = 15
 ANGLE_STEP = 5
 LASER_POLL_SECONDS = 2
+
+# --- Mission 5 (Kommunikation Reloaded) ----------------------------------
+# Aurora Station (Saskia) <-> Vesta Station (Lenny)
+AURORA_STATION = "Aurora Station"
+AURORA_TARGET = {"x": -6000, "y": 7000}
+
+# Das Comm Module Aurora verbindet sich selbst mit diesem MQTT-Server (siehe k8s/mosquitto.yaml).
+# Falls in der Doku vom Modul ein anderer Port steht: hier und in k8s/mosquitto.yaml (nodePort) anpassen.
+MQTT_HOST = HOST
+MQTT_PORT = 2036
+AURORA_RX_TOPIC = f"shipcomm/{AURORA_STATION}/rx"   # hier publisht Aurora, was sie versenden will
+AURORA_TX_TOPIC = f"shipcomm/{AURORA_STATION}/tx"   # hier empfaengt Aurora Nachrichten
