@@ -1,2 +1,2 @@
-.mqtt_sessions.json
 __pycache__/
+mqtt_broker.log

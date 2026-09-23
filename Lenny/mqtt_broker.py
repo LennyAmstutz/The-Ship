@@ -1,7 +1,9 @@
-import json
 import socket
 import struct
+import subprocess
+import sys
 import threading
+import time
 from pathlib import Path
 
 from config import MQTT_PORT
@@ -10,37 +12,17 @@ from config import MQTT_PORT
 # Das Comm-Modul und mission_5 verbinden sich beide hierhin; alles, was jemand
 # auf ein Topic publisht, wird an alle weitergegeben, die das Topic abonniert haben.
 # Unterstuetzt MQTT 3.1.1 und 5, QoS 0/1/2 (weitergegeben wird mit QoS 0).
+#
+# Der Server laeuft als EIGENER Prozess weiter, auch wenn main.py beendet/neu gestartet
+# wird: Das Comm-Modul verbindet sich nach einem Server-Neustart zwar selbst neu,
+# abonniert aber nicht nochmals - dann kaeme bei Vesta nichts mehr an.
+# Log: mqtt_broker.log (mission_5 zeigt es mit an). Stoppen: pkill -f mqtt_broker.py
 
 CONNECT, CONNACK, PUBLISH, PUBACK, PUBREC, PUBREL, PUBCOMP = 1, 2, 3, 4, 5, 6, 7
 SUBSCRIBE, SUBACK, UNSUBSCRIBE, UNSUBACK, PINGREQ, PINGRESP, DISCONNECT = 8, 9, 10, 11, 12, 13, 14
 
-_clients = {}            # socket -> {"name", "key", "version", "topics", "lock"}
+_clients = {}            # socket -> {"name", "version", "topics", "lock"}
 _clients_lock = threading.Lock()
-
-# Abos werden gespeichert und beim naechsten Verbinden wiederhergestellt: Das Comm-Modul
-# verbindet sich nach einem Neustart von main.py zwar selbst neu, abonniert aber nicht
-# nochmals - ohne das bekaeme es danach keine Nachrichten mehr.
-_SESSIONS_FILE = Path(__file__).with_name(".mqtt_sessions.json")
-_sessions_lock = threading.Lock()
-
-
-def _load_sessions():
-    try:
-        return json.loads(_SESSIONS_FILE.read_text())
-    except (OSError, ValueError):
-        return {}
-
-
-def _remember_topic(key, topic):
-    with _sessions_lock:
-        sessions = _load_sessions()
-        topics = sessions.setdefault(key, [])
-        if topic not in topics:
-            topics.append(topic)
-            try:
-                _SESSIONS_FILE.write_text(json.dumps(sessions, indent=1))
-            except OSError as exc:
-                print("[broker] Abos konnten nicht gespeichert werden:", exc, flush=True)
 
 
 def _encode_length(length):
@@ -143,7 +125,7 @@ def _distribute(topic, payload):
             pass
 
 
-def _handle_connect(sock, body, address):
+def _handle_connect(sock, body):
     _, pos = _read_string(body, 0)                 # Protokollname "MQTT"
     version = body[pos]
     pos += 4                                       # Version, Flags, Keep-Alive
@@ -152,17 +134,11 @@ def _handle_connect(sock, body, address):
         pos += props
     name, _ = _read_string(body, pos)
 
-    key = name or f"ip:{address[0]}"              # Comm-Modul schickt keinen Namen -> ueber IP erkennen
-    with _sessions_lock:
-        topics = list(_load_sessions().get(key, []))
     with _clients_lock:
-        _clients[sock] = {"name": name or "?", "key": key, "version": version, "topics": topics,
-                          "lock": threading.Lock()}
+        _clients[sock] = {"name": name or "?", "version": version, "topics": [], "lock": threading.Lock()}
     reply = b"\x00\x00\x00" if version == 5 else b"\x00\x00"   # Session-Flag, Reason 0 (+ leere Properties)
     _send(sock, _packet(CONNACK, 0, reply))
-    print(f"[broker] {name or '?'} verbunden von {address[0]} (MQTT {'5' if version == 5 else '3.1.1'})", flush=True)
-    if topics:
-        print(f"[broker] {name or '?'}: Abos wiederhergestellt {topics}", flush=True)
+    print(f"[broker] {name} verbunden (MQTT {'5' if version == 5 else '3.1.1'})", flush=True)
     return version
 
 
@@ -173,7 +149,7 @@ def _handle_client(sock, address):
         packet_type, flags, body = _read_packet(sock)
         if packet_type != CONNECT:
             return
-        version = _handle_connect(sock, body, address)
+        version = _handle_connect(sock, body)
         name = _clients[sock]["name"]
 
         while True:
@@ -207,9 +183,7 @@ def _handle_client(sock, address):
                 while pos < len(body):
                     topic, pos = _read_string(body, pos)
                     pos += 1                                  # gewuenschte QoS / Optionen
-                    if topic not in _clients[sock]["topics"]:
-                        _clients[sock]["topics"].append(topic)
-                    _remember_topic(_clients[sock]["key"], topic)
+                    _clients[sock]["topics"].append(topic)
                     granted.append(0)                         # wir liefern mit QoS 0
                     print(f"[broker] {name} abonniert {topic}", flush=True)
                 _send(sock, _packet(SUBACK, 0, packet_id + (b"\x00" if version == 5 else b"") + bytes(granted)))
@@ -234,7 +208,8 @@ def _handle_client(sock, address):
             elif packet_type == DISCONNECT:
                 break
     except (OSError, IndexError, struct.error, UnicodeDecodeError) as exc:
-        print(f"[broker] {name} getrennt: {exc}", flush=True)
+        if sock in _clients:                      # Verbindungstests ohne CONNECT nicht melden
+            print(f"[broker] {name} getrennt: {exc}", flush=True)
     finally:
         with _clients_lock:
             _clients.pop(sock, None)
@@ -247,24 +222,58 @@ def _accept_loop(server):
         threading.Thread(target=_handle_client, args=(sock, address), daemon=True).start()
 
 
-def start_mqtt_broker():
-    """Startet den MQTT-Server auf Port MQTT_PORT in einem Hintergrund-Thread.
-    Laeuft dort schon einer (z.B. Mosquitto), wird einfach dieser benutzt."""
+LOG_FILE = Path(__file__).with_name("mqtt_broker.log")
+
+
+def _serve_forever():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    try:
-        server.bind(("0.0.0.0", MQTT_PORT))
-    except OSError as exc:
-        print(f"[broker] Port {MQTT_PORT} schon belegt ({exc}) - benutze den laufenden MQTT-Server.", flush=True)
-        server.close()
-        return None
+    server.bind(("0.0.0.0", MQTT_PORT))
     server.listen()
     print(f"[broker] MQTT-Server laeuft auf Port {MQTT_PORT}", flush=True)
-    thread = threading.Thread(target=_accept_loop, args=(server,), daemon=True)
-    thread.start()
-    return thread
+    _accept_loop(server)
+
+
+def _is_running():
+    try:
+        socket.create_connection(("127.0.0.1", MQTT_PORT), timeout=1).close()
+        return True
+    except OSError:
+        return False
+
+
+def _follow_log(start):
+    """Zeigt neue Zeilen aus mqtt_broker.log in der Ausgabe von main.py an."""
+    with open(LOG_FILE, encoding="utf-8", errors="replace") as log:
+        log.seek(start)
+        while True:
+            line = log.readline()
+            if line:
+                print(line, end="", flush=True)
+            else:
+                time.sleep(0.3)
+
+
+def start_mqtt_broker():
+    """Startet den MQTT-Server als eigenen Hintergrund-Prozess, falls er noch nicht laeuft.
+    Laeuft auf dem Port schon einer (unser alter Prozess oder z.B. Mosquitto), wird dieser benutzt."""
+    LOG_FILE.touch()
+    start = LOG_FILE.stat().st_size
+    if _is_running():
+        print(f"[broker] MQTT-Server laeuft schon auf Port {MQTT_PORT} - benutze ihn (Abos bleiben erhalten).", flush=True)
+    else:
+        with open(LOG_FILE, "a") as log:
+            subprocess.Popen([sys.executable, "-u", str(Path(__file__).resolve())],
+                             cwd=str(Path(__file__).parent), stdout=log, stderr=subprocess.STDOUT,
+                             stdin=subprocess.DEVNULL, start_new_session=True)
+        for _ in range(50):
+            if _is_running():
+                break
+            time.sleep(0.1)
+        else:
+            raise RuntimeError(f"MQTT-Server startet nicht - siehe {LOG_FILE}")
+    threading.Thread(target=_follow_log, args=(start,), daemon=True).start()
 
 
 if __name__ == "__main__":
-    start_mqtt_broker()
-    threading.Event().wait()
+    _serve_forever()
