@@ -1,12 +1,15 @@
 import secrets
 import threading
+import time
 
+import requests
 from flask import Flask, jsonify, redirect, request
 
-from config import LASER_CLIENT_ID, LASER_CLIENT_SECRET, OAUTH_PORT
+from config import LASER_CLIENT_ID, LASER_CLIENT_SECRET, OAUTH_HOST, OAUTH_PORT
 
 app = Flask(__name__)
 codes = {}
+token_issued = threading.Event()   # wird gesetzt, sobald das Schiff ein Token geholt hat
 
 
 @app.get("/")
@@ -42,8 +45,12 @@ def authorize():
 
 @app.post("/token")
 def token():
-    data = request.form or request.get_json(silent=True) or {}
-    print("[oauth] Token Request:", dict(data))
+    data = dict(request.form or request.get_json(silent=True) or {})
+    # Client-Daten koennen auch per HTTP Basic Auth kommen
+    if request.authorization:
+        data.setdefault("client_id", request.authorization.username)
+        data.setdefault("client_secret", request.authorization.password)
+    print("[oauth] Token Request:", data)
 
     if data.get("client_id") != LASER_CLIENT_ID:
         return jsonify({"error": "invalid_client"}), 401
@@ -55,6 +62,8 @@ def token():
         return jsonify({"error": "invalid_grant"}), 400
 
     info = codes.pop(code)
+    token_issued.set()
+    print("[oauth] Token ausgestellt - Laser ist freigeschaltet.")
     return jsonify({
         "access_token": secrets.token_urlsafe(48),
         "token_type": "Bearer",
@@ -71,7 +80,15 @@ def start_oauth_server():
         daemon=True,
     )
     thread.start()
-    return thread
+
+    for _ in range(20):
+        try:
+            if "OAuth Server" in requests.get(f"http://{OAUTH_HOST}:{OAUTH_PORT}/", timeout=1).text:
+                print(f"[oauth] OAuth-Server laeuft auf {OAUTH_HOST}:{OAUTH_PORT}")
+                return thread
+        except requests.RequestException:
+            time.sleep(0.5)
+    raise RuntimeError(f"OAuth-Server nicht erreichbar auf {OAUTH_HOST}:{OAUTH_PORT} - Port belegt?")
 
 
 if __name__ == "__main__":
