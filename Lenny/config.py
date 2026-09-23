@@ -54,8 +54,6 @@ HOLD_SECONDS = 60
 HINT = {"x": -19747, "y": -14282}
 
 # --- Mission 4 -----------------------------------------------------------
-# Der OAuth-Server laeuft zusammen mit diesem Code auf der Schiff-VM.
-# Port 2015 ist dort vom RabbitMQ-Dashboard belegt, darum 5015.
 OAUTH_HOST = HOST
 OAUTH_PORT = 5015
 AUTHORIZE_URL = f"http://{OAUTH_HOST}:{OAUTH_PORT}/authorize"
