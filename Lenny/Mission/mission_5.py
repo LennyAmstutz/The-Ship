@@ -51,7 +51,7 @@ def vesta_to_partner(message):
     forward = {"source": VESTA_STATION, "data": message["data"]}
     try:
         forward_to_partner(forward)
-        print(f"[mission5] Vesta -> {message.get('dst')} weitergeleitet:", forward)
+        print(f"[mission5] Vesta -> {message.get('dst')} weitergeleitet ({len(message['data'])} Zeichen base64)")
     except Exception as exc:
         print("[mission5] Fehler beim Weiterleiten an Partner:", exc)
 
@@ -66,7 +66,7 @@ def partner_to_vesta():
         source = incoming.get("source", AURORA_STATION)
         try:
             send_message(source, incoming["data"])
-            print(f"[mission5] {source} -> Vesta zugestellt:", incoming)
+            print(f"[mission5] {source} -> Vesta zugestellt ({len(incoming['data'])} Zeichen base64)")
         except Exception as exc:
             print("[mission5] Fehler beim Zustellen an Vesta:", exc)
 

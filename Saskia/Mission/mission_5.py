@@ -1,4 +1,5 @@
 from pathlib import Path
+import base64
 import sys
 import threading
 import time
@@ -10,7 +11,6 @@ import requests
 from Actions.aurora_commands import connect, send_message
 from Actions.communication_commands import stations_in_reach
 from Actions.steering_commands import set_target, wait_until_in_reach
-from mqtt_broker import start_mqtt_broker
 from relay_server import start_relay_server, inbox
 from config import (
     command,
@@ -45,13 +45,13 @@ def stay_in_range():
         time.sleep(RANGE_CHECK_SECONDS)
 
 
-def aurora_to_partner(message):
-    """Aurora publisht {"dst": ..., "data": base64} - geht an Lenny (Vesta) weiter.
-    Zwischen den Schiffen bleibt data base64, damit die Binaerdaten in JSON passen."""
-    forward = {"source": AURORA_STATION, "data": message["data"]}
+def aurora_to_partner(dst, msg):
+    """Aurora schickt (dst, msg-Bytes) - geht an Lenny (Vesta) weiter.
+    Zwischen den Schiffen wird msg base64-codiert, damit die Bytes in JSON passen."""
+    forward = {"source": AURORA_STATION, "data": base64.b64encode(msg).decode("ascii")}
     try:
         forward_to_partner(forward)
-        print(f"[mission5] Aurora -> {message.get('dst')} weitergeleitet:", forward)
+        print(f"[mission5] Aurora -> {dst} weitergeleitet ({len(msg)} Bytes)")
     except Exception as exc:
         print("[mission5] Fehler beim Weiterleiten an Partner:", exc)
 
@@ -65,8 +65,9 @@ def partner_to_aurora():
 
         source = incoming.get("source", VESTA_STATION)
         try:
-            send_message(source, incoming["data"])
-            print(f"[mission5] {source} -> Aurora zugestellt:", incoming)
+            msg = base64.b64decode(incoming["data"])
+            send_message(source, msg)
+            print(f"[mission5] {source} -> Aurora zugestellt ({len(msg)} Bytes)")
         except Exception as exc:
             print("[mission5] Fehler beim Zustellen an Aurora:", exc)
 
@@ -75,7 +76,6 @@ def partner_to_aurora():
 
 def run():
     start_relay_server()
-    start_mqtt_broker()    # das Comm-Modul erwartet den MQTT-Server auf diesem Schiff
 
     fly_to_aurora()
     threading.Thread(target=stay_in_range, daemon=True).start()
