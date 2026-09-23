@@ -10,6 +10,7 @@ import requests
 from Actions.aurora_commands import connect, send_message
 from Actions.communication_commands import stations_in_reach
 from Actions.steering_commands import set_target, wait_until_in_reach
+from mqtt_broker import start_mqtt_broker
 from relay_server import start_relay_server, inbox
 from config import (
     command,
@@ -74,6 +75,7 @@ def partner_to_aurora():
 
 def run():
     start_relay_server()
+    start_mqtt_broker()    # das Comm-Modul erwartet den MQTT-Server auf diesem Schiff
 
     fly_to_aurora()
     threading.Thread(target=stay_in_range, daemon=True).start()
