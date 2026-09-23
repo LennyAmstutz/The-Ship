@@ -71,3 +71,14 @@ MINING_STANDOFF = 120
 ARRIVAL_RADIUS = 15
 ANGLE_STEP = 5
 LASER_POLL_SECONDS = 2
+
+# --- Mission 5 (Kommunikation Reloaded) ----------------------------------
+# Vesta Station (Lenny) <-> Aurora Station (Saskia)
+AURORA_STATION = "Aurora Station"
+AURORA_TARGET = {"x": -6000, "y": 7000}
+
+# Das Comm Module Vesta verbindet sich selbst mit diesem MQTT-Server (siehe k8s/mosquitto.yaml)
+MQTT_HOST = HOST
+MQTT_PORT = 2036
+VESTA_RX_TOPIC = f"shipcomm/{VESTA_STATION}/rx"   # hier publisht Vesta, was sie versenden will
+VESTA_TX_TOPIC = f"shipcomm/{VESTA_STATION}/tx"   # hier empfaengt Vesta Nachrichten
