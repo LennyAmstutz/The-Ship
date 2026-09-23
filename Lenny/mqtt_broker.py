@@ -1,6 +1,8 @@
+import json
 import socket
 import struct
 import threading
+from pathlib import Path
 
 from config import MQTT_PORT
 
@@ -12,8 +14,33 @@ from config import MQTT_PORT
 CONNECT, CONNACK, PUBLISH, PUBACK, PUBREC, PUBREL, PUBCOMP = 1, 2, 3, 4, 5, 6, 7
 SUBSCRIBE, SUBACK, UNSUBSCRIBE, UNSUBACK, PINGREQ, PINGRESP, DISCONNECT = 8, 9, 10, 11, 12, 13, 14
 
-_clients = {}            # socket -> {"name", "version", "topics", "lock"}
+_clients = {}            # socket -> {"name", "key", "version", "topics", "lock"}
 _clients_lock = threading.Lock()
+
+# Abos werden gespeichert und beim naechsten Verbinden wiederhergestellt: Das Comm-Modul
+# verbindet sich nach einem Neustart von main.py zwar selbst neu, abonniert aber nicht
+# nochmals - ohne das bekaeme es danach keine Nachrichten mehr.
+_SESSIONS_FILE = Path(__file__).with_name(".mqtt_sessions.json")
+_sessions_lock = threading.Lock()
+
+
+def _load_sessions():
+    try:
+        return json.loads(_SESSIONS_FILE.read_text())
+    except (OSError, ValueError):
+        return {}
+
+
+def _remember_topic(key, topic):
+    with _sessions_lock:
+        sessions = _load_sessions()
+        topics = sessions.setdefault(key, [])
+        if topic not in topics:
+            topics.append(topic)
+            try:
+                _SESSIONS_FILE.write_text(json.dumps(sessions, indent=1))
+            except OSError as exc:
+                print("[broker] Abos konnten nicht gespeichert werden:", exc, flush=True)
 
 
 def _encode_length(length):
@@ -93,9 +120,21 @@ def _send(sock, data):
         sock.sendall(data)
 
 
+_warned_topics = set()
+
+
 def _distribute(topic, payload):
     with _clients_lock:
         receivers = [(sock, c) for sock, c in _clients.items() if any(_matches(t, topic) for t in c["topics"])]
+    if not receivers:
+        if topic not in _warned_topics:
+            _warned_topics.add(topic)
+            with _clients_lock:
+                subscribed = {c["name"]: c["topics"] for c in _clients.values()}
+            print(f"[broker] WARNUNG: niemand hat '{topic}' abonniert - die Nachricht geht verloren. "
+                  f"Abos gerade: {subscribed}", flush=True)
+        return
+    _warned_topics.discard(topic)
     for sock, client in receivers:
         body = _string(topic) + (b"\x00" if client["version"] == 5 else b"") + payload
         try:
@@ -104,7 +143,7 @@ def _distribute(topic, payload):
             pass
 
 
-def _handle_connect(sock, body):
+def _handle_connect(sock, body, address):
     _, pos = _read_string(body, 0)                 # Protokollname "MQTT"
     version = body[pos]
     pos += 4                                       # Version, Flags, Keep-Alive
@@ -113,11 +152,17 @@ def _handle_connect(sock, body):
         pos += props
     name, _ = _read_string(body, pos)
 
+    key = name or f"ip:{address[0]}"              # Comm-Modul schickt keinen Namen -> ueber IP erkennen
+    with _sessions_lock:
+        topics = list(_load_sessions().get(key, []))
     with _clients_lock:
-        _clients[sock] = {"name": name or "?", "version": version, "topics": [], "lock": threading.Lock()}
+        _clients[sock] = {"name": name or "?", "key": key, "version": version, "topics": topics,
+                          "lock": threading.Lock()}
     reply = b"\x00\x00\x00" if version == 5 else b"\x00\x00"   # Session-Flag, Reason 0 (+ leere Properties)
     _send(sock, _packet(CONNACK, 0, reply))
-    print(f"[broker] {name} verbunden (MQTT {'5' if version == 5 else '3.1.1'})", flush=True)
+    print(f"[broker] {name or '?'} verbunden von {address[0]} (MQTT {'5' if version == 5 else '3.1.1'})", flush=True)
+    if topics:
+        print(f"[broker] {name or '?'}: Abos wiederhergestellt {topics}", flush=True)
     return version
 
 
@@ -128,7 +173,7 @@ def _handle_client(sock, address):
         packet_type, flags, body = _read_packet(sock)
         if packet_type != CONNECT:
             return
-        version = _handle_connect(sock, body)
+        version = _handle_connect(sock, body, address)
         name = _clients[sock]["name"]
 
         while True:
@@ -162,7 +207,9 @@ def _handle_client(sock, address):
                 while pos < len(body):
                     topic, pos = _read_string(body, pos)
                     pos += 1                                  # gewuenschte QoS / Optionen
-                    _clients[sock]["topics"].append(topic)
+                    if topic not in _clients[sock]["topics"]:
+                        _clients[sock]["topics"].append(topic)
+                    _remember_topic(_clients[sock]["key"], topic)
                     granted.append(0)                         # wir liefern mit QoS 0
                     print(f"[broker] {name} abonniert {topic}", flush=True)
                 _send(sock, _packet(SUBACK, 0, packet_id + (b"\x00" if version == 5 else b"") + bytes(granted)))
