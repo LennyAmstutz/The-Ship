@@ -3,3 +3,5 @@ mqtt_broker.log
 mongo_server.log
 mongo_data.bson
 mongo_data.tmp
+s3_server.log
+s3_data/

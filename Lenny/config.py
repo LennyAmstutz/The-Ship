@@ -27,6 +27,7 @@ command = {
     "reactor_configure_oauth": f"http://{HOST}:2039/configure_oauth",
     "reactor_login": f"http://{HOST}:2039/login",
     "reactor_seconds_left": f"http://{HOST}:2039/seconds_left",
+    "antimatter_sensor": f"http://{HOST}:2043",
 }
 
 # --- Mission 1 ---------------------------------------------------------
@@ -137,3 +138,29 @@ CORE_TARGET = {"x": 0, "y": 0}
 
 REPORT_SECONDS = 10
 REACTOR_STALL_SECONDS = 10      # so lange darf der Reaktor trotz Uran stehen, bevor neu eingeloggt wird
+
+# --- Mission 9 (Analyzer Gamma + S3) -------------------------------------
+# Analyzer Gamma liest regelmaessig s3://analyzer-gamma/data.hex von http://192.168.101.50:2016.
+# Die Konfiguration im Analyzer ist hardcodiert - unser S3-Server muss genau so heissen.
+S3_HOST = HOST
+S3_PORT = 2016
+S3_BUCKET = "analyzer-gamma"
+S3_OBJECT = "data.hex"
+S3_ACCESS_KEY = "theship"
+S3_SECRET_KEY = "theship1234"
+S3_REGION = "us-east-1"
+S3_CHECK_SIGNATURE = True       # False: Server nimmt jede Anfrage mit dem richtigen access key an
+
+# Antimateriesensor: x, y und z muessen GLEICHZEITIG messen, einer davon liefert das Resultat
+ANTIMATTER_AXES = ("x", "y", "z")
+ANTIMATTER_TIMEOUT = 120        # so lange darf eine Messung (alle 3 Achsen) dauern
+ANTIMATTER_INTERVAL = 2         # Pause zwischen zwei Messungen
+
+GAMMA_LIMITS = {"sensor_antimatter": 1.0, "analyzer_gamma": 1.0,
+                "laser": 0.0, "nuclear_reactor": 0.0, "analyzer_beta": 0.0,
+                "scanner": 0.0, "sensor_void_energy": 0.0, "analyzer_alpha": 0.0}
+
+AETHERIUM_ROCK = "Aetherium Rock"
+AETHERIUM_TARGET = {"x": 30957, "y": -28933}
+AETHERIUM_STANDOFF = 50         # Abstand zum Aetherium Rock
+AETHERIUM_STAY_RADIUS = 30      # weiter weg vom Halte-Punkt -> Kurs neu setzen
