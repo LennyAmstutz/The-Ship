@@ -8,7 +8,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import requests
 
 import auth
-from oauth_server import token_issued
 from Actions import energy_commands, reactor_commands
 from Actions.cargo_commands import count_matching, free_space, hold_size, resources
 from Actions.communication_commands import sell
@@ -131,45 +130,65 @@ def sell_foreign_cargo():
 
 # --- Uran abbauen ------------------------------------------------------------
 
-def _laser_state():
+def laser_login():
+    """Laser per OAuth2 einloggen. Der Laser verliert seine OAuth-Config z.B. wenn er neu startet
+    ("Deaktiviert (keine oauth2 Config)") - darum vor jedem Abbau und bei jedem Fehler neu."""
     try:
-        return state()
-    except requests.HTTPError as exc:
-        if exc.response is not None and exc.response.status_code in (401, 403):
-            print("[mission8] Laser will ein neues Login ...")
-            auth.login("laser")
-            return state()
-        raise
+        auth.login("laser", interactive=False)
+    except requests.RequestException as exc:
+        print("[mission8] Laser-Login fehlgeschlagen:", exc)
+
+
+def _laser(command, *args):
+    """Laser-Befehl ausfuehren. Klappt er nicht (keine OAuth-Config, kein Login, Fehler-Antwort),
+    wird der Laser neu eingeloggt und der Befehl wiederholt."""
+    for attempt in range(1, 4):
+        try:
+            result = command(*args)
+            if isinstance(result, dict) and result.get("kind", "success") != "success":
+                raise ValueError(f"Antwort {result}")
+            if command is state and "is_active" not in result:
+                raise ValueError(f"unerwarteter Zustand {result}")
+            return result
+        except (requests.RequestException, ValueError) as exc:
+            response = getattr(exc, "response", None)
+            detail = f" ({response.status_code}: {response.text[:150]!r})" if response is not None else ""
+            print(f"[mission8] Laser {command.__name__} klappt nicht: {exc}{detail} - neues Login ({attempt}/3)")
+            laser_login()
+            time.sleep(1)
+    raise RuntimeError(f"Laser {command.__name__} klappt auch nach neuem Login nicht")
 
 
 def _search_angle():
     while True:
         print("[mission8] Suche Trefferwinkel ...")
         for angle in range(0, 360, ANGLE_STEP):
-            set_angle(angle)
-            if not _laser_state()["is_active"]:
-                activate()
+            _laser(set_angle, angle)
+            if not _laser(state)["is_active"]:
+                _laser(activate)
             time.sleep(0.5)
-            if _laser_state()["is_mining"]:
+            if _laser(state)["is_mining"]:
                 return angle
-        print("[mission8] Kein Winkel gefunden, versuche erneut ...")
+        print(f"[mission8] Kein Winkel gefunden (Laser: {_laser(state)}) - neues Login, versuche erneut ...")
+        laser_login()
 
 
 def mine_uran():
     sell_foreign_cargo()
     switch_power(MINING_LIMITS, "den Laser (Reaktor und Analyzer aus)")
     fly_to(_standoff_point(URAN_TARGET, MINING_STANDOFF), f"Mining-Position vor dem {URAN_STONE}")
+    laser_login()                                  # jetzt hat der Laser Strom - frisch einloggen
     time.sleep(2)
 
     try:
         angle = _search_angle()
         print(f"[mission8] Treffer bei {angle} Grad, Uran-Abbau laeuft.")
         while free_space() > 0:
-            print(f"[mission8]  Uran {uran_count()} / {hold_size()}")
-            set_angle(angle)
-            status = _laser_state()
+            print(f"[mission8]  Uran {uran_count()} / {hold_size()}   Laderaum: {resources()}")
+            _laser(set_angle, angle)
+            status = _laser(state)
             if not status["is_active"] and not status["is_cooling_down"]:
-                activate()
+                _laser(activate)
             time.sleep(LASER_POLL_SECONDS)
     finally:
         try:
@@ -196,8 +215,7 @@ def analyze_at_gold_stone():
     hold_point = _standoff_point(GOLD_TARGET, GOLD_STANDOFF)
     fly_to(hold_point, GOLD_STONE, radius=GOLD_STAY_RADIUS)
     switch_power(ANALYSIS_LIMITS, "Kernreaktor und Analyzer Beta (Laser aus)")
-    if not token_issued["reactor"].is_set():
-        auth.login("reactor", interactive=False)
+    auth.login("reactor", interactive=False)      # jetzt hat der Reaktor Strom - frisch einloggen
 
     last_report = last_relogin = 0
     last_reading, last_change = None, time.time()  # aendert sich nichts mehr, steht der Reaktor
@@ -239,7 +257,7 @@ def analyze_at_gold_stone():
 
 
 def run():
-    auth.login("laser")
+    laser_login()
     try:
         auth.login("reactor", interactive=False)      # klappt evtl. erst mit Strom - dann beim Gold Stone
     except requests.RequestException as exc:
@@ -248,12 +266,16 @@ def run():
     threading.Thread(target=keep_power, daemon=True).start()
 
     while True:                                       # laeuft weiter, bis man mit Ctrl+C abbricht
-        if uran_count() == 0:
-            mine_uran()
+        try:
             if uran_count() == 0:
-                print("[mission8] WARNUNG: kein Uran abgebaut - Laderaum:", resources())
-                continue
-        analyze_at_gold_stone()
+                mine_uran()
+                if uran_count() == 0:
+                    print("[mission8] WARNUNG: kein Uran abgebaut - Laderaum:", resources())
+                    continue
+            analyze_at_gold_stone()
+        except Exception as exc:                      # nie abstuerzen - sonst bleibt alles stehen
+            print(f"[mission8] Fehler: {exc!r} - neuer Versuch in 5 s")
+            time.sleep(5)
 
 
 if __name__ == "__main__":
