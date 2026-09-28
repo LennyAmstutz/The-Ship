@@ -104,3 +104,14 @@ SENSOR_INTERVAL = 2
 
 RELIEF_STATION = "Relief Station"
 RELIEF_TARGET = {"x": 150000, "y": 150000}
+
+# --- Mission 7 (Analyzer Alpha) ----------------------------------------------
+# Der Analyzer holt die Vakuumenergie-Daten per gRPC bei uns ab: grpc://192.168.101.51:2102
+ANALYZER_LIMITS = {"sensor_void_energy": 1.0, "analyzer_alpha": 1.0}
+GRPC_PORT = 2102
+GRPC_WAIT_SECONDS = 10          # so lange wartet ein Aufruf hoechstens auf die erste Messung
+
+URAN_STONE = "Uran Stone"
+URAN_TARGET = {"x": -2100, "y": 3600}
+URAN_STANDOFF = 50              # Abstand zum Stein (wie bei Arakrock nicht direkt drauf)
+URAN_STAY_RADIUS = 30           # weiter weg vom Halte-Punkt -> Kurs neu setzen
