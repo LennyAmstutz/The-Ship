@@ -22,6 +22,8 @@ command = {
     "laser_state": f"http://{HOST}:2018/state",
     "comm_elyse_ws": f"ws://{HOST}:2026/api",
     "partner_relay": f"http://{PARTNER_HOST}:{PARTNER_RELAY_PORT}/relay",
+    "energy_nodes": [f"http://{HOST}:2032", f"http://{HOST}:2033"],
+    "void_sensor": f"http://{HOST}:2037",
 }
 
 # --- Mission 1 ---------------------------------------------------------
@@ -82,3 +84,23 @@ MQTT_HOST = HOST
 MQTT_PORT = 2036
 VESTA_RX_TOPIC = f"shipcomm/{VESTA_STATION}/rx"   # hier publisht Vesta, was sie versenden will
 VESTA_TX_TOPIC = f"shipcomm/{VESTA_STATION}/tx"   # hier empfaengt Vesta Nachrichten
+
+# --- Mission 6 (Schild) ----------------------------------------------------
+# Energy-Management (Aktiv/Passiv): nur der aktive Node nimmt neue Limits an
+SHIELD_LIMITS = {"sensor_void_energy": 1.0, "shield_generator": 1.0}
+ENERGY_CHECK_SECONDS = 5
+
+# Der Schildgenerator liest die Sensordaten aus dieser MongoDB (hardcodiert im Generator)
+MONGO_HOST = HOST
+MONGO_PORT = 2021
+MONGO_USER = "theship"
+MONGO_PASSWORD = "theship1234"
+MONGO_DB = "theshipdb"
+VACUUM_COLLECTION = "vacuum-energy"
+
+SENSOR_POLL_SECONDS = 0.5
+SENSOR_TIMEOUT = 30
+SENSOR_INTERVAL = 2
+
+RELIEF_STATION = "Relief Station"
+RELIEF_TARGET = {"x": 150000, "y": 150000}

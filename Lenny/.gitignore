@@ -1,2 +1,5 @@
 __pycache__/
 mqtt_broker.log
+mongo_server.log
+mongo_data.bson
+mongo_data.tmp
