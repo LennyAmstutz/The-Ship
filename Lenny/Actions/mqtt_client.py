@@ -3,9 +3,6 @@ import struct
 import threading
 import time
 
-# Kleiner MQTT-Client (MQTT 3.1.1, QoS 0) direkt ueber TCP - braucht kein paho.
-# Jedes MQTT-Paket: 1 Byte Typ/Flags, "Remaining Length" (1-4 Byte), dann der Inhalt.
-
 CONNECT, CONNACK, PUBLISH, SUBSCRIBE, SUBACK, PINGREQ, PINGRESP = 1, 2, 3, 8, 9, 12, 13
 KEEP_ALIVE = 60
 
