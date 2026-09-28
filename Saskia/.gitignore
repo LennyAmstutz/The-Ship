@@ -1,0 +1,4 @@
+__pycache__/
+mongo_server.log
+mongo_data.bson
+mongo_data.tmp

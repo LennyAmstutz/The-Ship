@@ -1,0 +1,62 @@
+# Echte MongoDB fuer den Schildgenerator (Mission 6) - Alternative zu mongo_server.py.
+# Der Generator erwartet sie unter mongodb://theship:theship1234@192.168.101.51:2021/theshipdb
+#   kubectl apply -f k8s/mongodb.yaml
+# mission_6 erkennt, dass auf Port 2021 schon eine MongoDB laeuft, und benutzt diese.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongodb-init
+data:
+  # Der User muss in theshipdb angelegt sein (authSource = Datenbank aus der URL)
+  init.js: |
+    db.getSiblingDB("theshipdb").createUser({
+      user: "theship",
+      pwd: "theship1234",
+      roles: [{ role: "readWrite", db: "theshipdb" }]
+    });
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+        - name: mongodb
+          image: mongo:7
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: admin
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              value: admin1234
+          ports:
+            - containerPort: 27017
+          volumeMounts:
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: init
+          configMap:
+            name: mongodb-init
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+spec:
+  type: NodePort
+  selector:
+    app: mongodb
+  ports:
+    - name: mongodb
+      port: 27017
+      targetPort: 27017
+      nodePort: 2021
