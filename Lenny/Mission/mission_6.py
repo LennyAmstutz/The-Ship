@@ -24,13 +24,6 @@ from config import (
     VACUUM_COLLECTION,
 )
 
-# Mission 6: Schild
-#   1. Energy-Management: Sensor und Schildgenerator auf dem aktiven Node mit Strom versorgen
-#   2. MongoDB auf Port 2021 betreiben (dort liest der Schildgenerator)
-#   3. Vakuumenergie-Sensor messen lassen, Ergebnis als einziges Dokument in vacuum-energy
-#      schreiben und die Messung beim Sensor wieder loeschen
-#   4. Mit laufendem Schild zur Relief Station fliegen
-
 mongo = MongoClient(MONGO_HOST, MONGO_PORT, MONGO_USER, MONGO_PASSWORD, MONGO_DB)
 first_measurement = threading.Event()
 
@@ -41,7 +34,6 @@ def power_shield():
 
 
 def keep_power():
-    """Wechselt der aktive Node (Failover) oder werden die Limits zurueckgesetzt, neu setzen."""
     last_node = None
     while True:
         try:
@@ -106,7 +98,6 @@ def run():
 
     fly_to_relief()
 
-    # Schild weiterlaufen lassen (Sensor messen, Strom halten) - beenden mit Ctrl+C
     while True:
         time.sleep(60)
 
