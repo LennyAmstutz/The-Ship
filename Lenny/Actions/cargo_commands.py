@@ -15,3 +15,10 @@ def free_space():
 
 def hold_size():
     return hold()["hold"]["hold_size"]
+
+def resources():
+    return hold()["hold"]["resources"]
+
+def count_matching(name_part):
+    """Summe aller Ressourcen, deren Name name_part enthaelt (z.B. "URAN" -> URAN, URANIUM)."""
+    return sum(amount for name, amount in resources().items() if name_part.upper() in name.upper())

@@ -5,11 +5,17 @@ import time
 import requests
 from flask import Flask, jsonify, redirect, request
 
-from config import LASER_CLIENT_ID, LASER_CLIENT_SECRET, OAUTH_HOST, OAUTH_PORT
+from config import OAUTH_CLIENT_SECRETS, OAUTH_HOST, OAUTH_PORT
+
+# OAuth2-Server (Authorization Code Flow) fuer die gefaehrlichen Geraete: Laser und Kernreaktor.
+# Jedes Geraet bekommt beim configure_oauth sein eigenes client_secret; daran erkennt
+# der Token-Endpunkt, welches Geraet sich gerade einloggt.
 
 app = Flask(__name__)
 codes = {}
-token_issued = threading.Event()   # wird gesetzt, sobald das Schiff ein Token geholt hat
+# wird pro Geraet gesetzt, sobald es ein Token geholt hat
+token_issued = {device: threading.Event() for device in OAUTH_CLIENT_SECRETS}
+_started = False
 
 
 @app.get("/")
@@ -26,8 +32,8 @@ def authorize():
     state = request.args.get("state")
     print(f"[oauth] authorize client_id={client_id} redirect_uri={redirect_uri} scope={scope}")
 
-    if client_id != LASER_CLIENT_ID:
-        return "Invalid client_id", 400
+    if not client_id:
+        return "Missing client_id", 400
     if response_type != "code":
         return "Invalid response_type", 400
     if not redirect_uri:
@@ -36,7 +42,7 @@ def authorize():
     code = secrets.token_urlsafe(32)
     codes[code] = {"client_id": client_id, "redirect_uri": redirect_uri, "scope": scope}
 
-    redirect_url = f"{redirect_uri}?code={code}"
+    redirect_url = f"{redirect_uri}{'&' if '?' in redirect_uri else '?'}code={code}"
     if state:
         redirect_url += f"&state={state}"
     print("[oauth] Redirect zu:", redirect_url)
@@ -50,20 +56,21 @@ def token():
     if request.authorization:
         data.setdefault("client_id", request.authorization.username)
         data.setdefault("client_secret", request.authorization.password)
-    print("[oauth] Token Request:", data)
+    print("[oauth] Token Request:", {k: v for k, v in data.items() if k != "client_secret"})
 
-    if data.get("client_id") != LASER_CLIENT_ID:
-        return jsonify({"error": "invalid_client"}), 401
-    if data.get("client_secret") != LASER_CLIENT_SECRET:
+    device = next((d for d, s in OAUTH_CLIENT_SECRETS.items() if s == data.get("client_secret")), None)
+    if device is None:
         return jsonify({"error": "invalid_client", "error_description": "Wrong client secret"}), 401
 
     code = data.get("code")
     if code not in codes:
         return jsonify({"error": "invalid_grant"}), 400
-
     info = codes.pop(code)
-    token_issued.set()
-    print("[oauth] Token ausgestellt - Laser ist freigeschaltet.")
+    if data.get("client_id") and data["client_id"] != info["client_id"]:
+        return jsonify({"error": "invalid_grant", "error_description": "Code gehoert zu einem anderen Client"}), 400
+
+    token_issued[device].set()
+    print(f"[oauth] Token ausgestellt fuer {device} (client_id={info['client_id']}) - freigeschaltet.")
     return jsonify({
         "access_token": secrets.token_urlsafe(48),
         "token_type": "Bearer",
@@ -73,8 +80,11 @@ def token():
 
 
 def start_oauth_server():
-    """Startet den OAuth-Server in einem Hintergrund-Thread. Das Schiff holt sich
-    hier beim Laser-Login den Code und tauscht ihn gegen ein Token."""
+    """Startet den OAuth-Server in einem Hintergrund-Thread (nur einmal). Die Geraete holen sich
+    hier beim Login den Code und tauschen ihn gegen ein Token."""
+    global _started
+    if _started:
+        return
     thread = threading.Thread(
         target=lambda: app.run(host="0.0.0.0", port=OAUTH_PORT, use_reloader=False),
         daemon=True,
@@ -85,7 +95,8 @@ def start_oauth_server():
         try:
             if "OAuth Server" in requests.get(f"http://{OAUTH_HOST}:{OAUTH_PORT}/", timeout=1).text:
                 print(f"[oauth] OAuth-Server laeuft auf {OAUTH_HOST}:{OAUTH_PORT}")
-                return thread
+                _started = True
+                return
         except requests.RequestException:
             time.sleep(0.5)
     raise RuntimeError(f"OAuth-Server nicht erreichbar auf {OAUTH_HOST}:{OAUTH_PORT} - Port belegt?")
