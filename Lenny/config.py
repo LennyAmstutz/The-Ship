@@ -81,22 +81,18 @@ ANGLE_STEP = 5
 LASER_POLL_SECONDS = 2
 
 # --- Mission 5 (Kommunikation Reloaded) ----------------------------------
-# Vesta Station (Lenny) <-> Aurora Station (Saskia)
 AURORA_STATION = "Aurora Station"
 AURORA_TARGET = {"x": -6000, "y": 7000}
 
-# Das Comm Module Vesta verbindet sich selbst mit diesem MQTT-Server (siehe k8s/mosquitto.yaml)
 MQTT_HOST = HOST
 MQTT_PORT = 2036
-VESTA_RX_TOPIC = f"shipcomm/{VESTA_STATION}/rx"   # hier publisht Vesta, was sie versenden will
-VESTA_TX_TOPIC = f"shipcomm/{VESTA_STATION}/tx"   # hier empfaengt Vesta Nachrichten
+VESTA_RX_TOPIC = f"shipcomm/{VESTA_STATION}/rx"
+VESTA_TX_TOPIC = f"shipcomm/{VESTA_STATION}/tx"
 
 # --- Mission 6 (Schild) ----------------------------------------------------
-# Energy-Management (Aktiv/Passiv): nur der aktive Node nimmt neue Limits an
 SHIELD_LIMITS = {"sensor_void_energy": 1.0, "shield_generator": 1.0}
 ENERGY_CHECK_SECONDS = 5
 
-# Der Schildgenerator liest die Sensordaten aus dieser MongoDB (hardcodiert im Generator)
 MONGO_HOST = HOST
 MONGO_PORT = 2021
 MONGO_USER = "theship"
@@ -112,15 +108,14 @@ RELIEF_STATION = "Relief Station"
 RELIEF_TARGET = {"x": 150000, "y": 150000}
 
 # --- Mission 7 (Analyzer Alpha) ----------------------------------------------
-# Der Analyzer holt die Vakuumenergie-Daten per gRPC bei uns ab: grpc://192.168.101.50:2102
 ANALYZER_LIMITS = {"sensor_void_energy": 1.0, "analyzer_alpha": 1.0}
 GRPC_PORT = 2102
-GRPC_WAIT_SECONDS = 10          # so lange wartet ein Aufruf hoechstens auf die erste Messung
+GRPC_WAIT_SECONDS = 10
 
 URAN_STONE = "Uran Stone"
 URAN_TARGET = {"x": -2100, "y": 3600}
-URAN_STANDOFF = 50              # Abstand zum Stein (wie bei Arakrock nicht direkt drauf)
-URAN_STAY_RADIUS = 30           # weiter weg vom Halte-Punkt -> Kurs neu setzen
+URAN_STANDOFF = 50
+URAN_STAY_RADIUS = 30
 
 # --- Mission 8 (Analyzer Beta + Kernreaktor) ------------------------------
 # Analyzer Beta braucht viel Strom -> Kernreaktor (OAuth-Login, verbrennt Uran aus dem Laderaum).
