@@ -1,7 +1,3 @@
-# Protobuf-Nachrichten aus proto/api.proto, von Hand codiert (ohne protoc/grpcio).
-#   message Void {}                       -> 0 Bytes
-#   message SensorData { string hexdata = 1; }
-
 READ_SENSOR_DATA = "/api.unsafe.sensor_void_energy.SensorVoidEnergyServer/read_sensor_data"
 
 
@@ -16,4 +12,4 @@ def _varint(value):
 
 def encode_sensor_data(hexdata):
     raw = hexdata.encode("utf-8")
-    return b"\x0a" + _varint(len(raw)) + raw        # Feld 1, Typ 2 (Laenge + Bytes)
+    return b"\x0a" + _varint(len(raw)) + raw 

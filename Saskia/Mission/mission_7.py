@@ -22,12 +22,6 @@ from config import (
     URAN_TARGET,
 )
 
-# Mission 7: Analyzer Alpha
-#   1. Energy-Management: Sensor und Analyzer auf dem aktiven Node mit Strom versorgen
-#   2. gRPC-Server auf Port 2102 betreiben - dort holt der Analyzer die Sensordaten ab
-#   3. Vakuumenergie-Sensor messen lassen und die Messung danach wieder loeschen
-#   4. Zum Uran Stone fliegen und in der Naehe bleiben, bis die Analyse fertig ist
-
 latest = {"hexdata": None}
 first_measurement = threading.Event()
 calls = {"count": 0}
@@ -57,7 +51,7 @@ def measure_forever():
     counter = 0
     while True:
         counter += 1
-        request_id = f"lenny_m7_{int(time.time())}_{counter:04d}"
+        request_id = f"saskia_m7_{int(time.time())}_{counter:04d}"
         try:
             latest["hexdata"] = void_sensor_commands.measure(request_id)   # loescht die Messung danach
             if not first_measurement.is_set():
@@ -122,7 +116,7 @@ def run():
     threading.Thread(target=keep_power, daemon=True).start()
     threading.Thread(target=measure_forever, daemon=True).start()
 
-    fly_and_stay()          # laeuft weiter, bis man mit Ctrl+C abbricht
+    fly_and_stay()
 
 
 if __name__ == "__main__":
