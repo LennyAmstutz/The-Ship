@@ -61,7 +61,7 @@ def measure_forever():
     counter = 0
     while True:
         counter += 1
-        request_id = f"saskia_{int(time.time())}_{counter:04d}"
+        request_id = f"lenny_{int(time.time())}_{counter:04d}"
         try:
             data = void_sensor_commands.measure(request_id)
             store_measurement(data)
