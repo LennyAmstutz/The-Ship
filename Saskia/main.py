@@ -1,4 +1,4 @@
 # -----------------------------------------------------------------------
-from Mission.mission_9 import run
+from Mission.mission_6 import run
 
 run()
