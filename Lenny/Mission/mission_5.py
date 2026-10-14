@@ -46,8 +46,6 @@ def stay_in_range():
 
 
 def vesta_to_partner(message):
-    """Vesta publisht {"dst": ..., "data": base64} - geht an Saskia (Aurora) weiter.
-    Zwischen den Schiffen bleibt data base64, damit die Binaerdaten in JSON passen."""
     forward = {"source": VESTA_STATION, "data": message["data"]}
     try:
         forward_to_partner(forward)
@@ -57,7 +55,6 @@ def vesta_to_partner(message):
 
 
 def partner_to_vesta():
-    """Nachrichten vom Partner an Vesta. Staut sich etwas an, nur die neueste."""
     while True:
         incoming = inbox.get()
         while not inbox.empty():
@@ -75,7 +72,7 @@ def partner_to_vesta():
 
 def run():
     start_relay_server()
-    start_mqtt_broker()    # das Comm-Modul erwartet den MQTT-Server auf diesem Schiff
+    start_mqtt_broker()
 
     fly_to_vesta()
     threading.Thread(target=stay_in_range, daemon=True).start()

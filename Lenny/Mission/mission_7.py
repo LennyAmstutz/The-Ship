@@ -22,19 +22,12 @@ from config import (
     URAN_TARGET,
 )
 
-# Mission 7: Analyzer Alpha
-#   1. Energy-Management: Sensor und Analyzer auf dem aktiven Node mit Strom versorgen
-#   2. gRPC-Server auf Port 2102 betreiben - dort holt der Analyzer die Sensordaten ab
-#   3. Vakuumenergie-Sensor messen lassen und die Messung danach wieder loeschen
-#   4. Zum Uran Stone fliegen und in der Naehe bleiben, bis die Analyse fertig ist
-
 latest = {"hexdata": None}
 first_measurement = threading.Event()
 calls = {"count": 0}
 
 
 def keep_power():
-    """Wechselt der aktive Node (Failover) oder werden die Limits zurueckgesetzt, neu setzen."""
     last_node = None
     while True:
         try:
@@ -69,7 +62,6 @@ def measure_forever():
 
 
 def read_sensor_data(request):
-    """gRPC: rpc read_sensor_data(Void) returns (SensorData) - gibt die neueste Messung zurueck."""
     if not first_measurement.wait(GRPC_WAIT_SECONDS):
         raise GrpcError(GRPC_UNAVAILABLE, "noch keine Sensordaten")
     calls["count"] += 1
@@ -83,7 +75,6 @@ def _distance(a, b):
 
 
 def _hold_position(here):
-    """Punkt URAN_STANDOFF vor dem Uran Stone, auf der Seite, von der das Schiff kommt."""
     dx, dy = here["x"] - URAN_TARGET["x"], here["y"] - URAN_TARGET["y"]
     length = (dx ** 2 + dy ** 2) ** 0.5 or 1
     return {"x": URAN_TARGET["x"] + dx / length * URAN_STANDOFF,
@@ -122,7 +113,7 @@ def run():
     threading.Thread(target=keep_power, daemon=True).start()
     threading.Thread(target=measure_forever, daemon=True).start()
 
-    fly_and_stay()          # laeuft weiter, bis man mit Ctrl+C abbricht
+    fly_and_stay()
 
 
 if __name__ == "__main__":

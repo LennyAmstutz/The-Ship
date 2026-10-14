@@ -52,7 +52,6 @@ def keep_power():
 
 
 def store_measurement(data):
-    """Genau ein Dokument { "data": "<hex>" } in vacuum-energy - das alte wird ersetzt."""
     if len(mongo.find(VACUUM_COLLECTION)) > 1:
         mongo.delete_many(VACUUM_COLLECTION)
     mongo.replace_one(VACUUM_COLLECTION, {}, {"data": data}, upsert=True)
