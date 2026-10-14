@@ -237,7 +237,7 @@ def _sasl_continue(cmd, conn):
     sasl["done"] = True
     conn["user"] = sasl["user"]
     host = conn["peer"].rsplit(":", 1)[0]
-    if (sasl["user"], host) not in _logged_in:          # jede Gegenstelle nur beim ersten Mal melden
+    if (sasl["user"], host) not in _logged_in:
         _logged_in.add((sasl["user"], host))
         print(f"[mongo] {sasl['user']} von {host} eingeloggt", flush=True)
     return {"conversationId": 1, "done": True,
@@ -319,7 +319,6 @@ def _count(cmd, db):
 
 
 def _aggregate(cmd, db):
-    """Nur die Stufen, die count_documents & Co. brauchen: $match, $skip, $limit, $count, $group mit $sum."""
     name = cmd["aggregate"]
     with _data_lock:
         docs = list(_collection(db, name))
@@ -379,7 +378,7 @@ def _build_info(cmd, db):
             "maxBsonObjectSize": 16 * 1024 * 1024, "modules": []}
 
 
-OPEN_COMMANDS = {                                    # geht auch ohne Login
+OPEN_COMMANDS = {
     "hello": lambda cmd, db, conn: _hello(cmd, conn),
     "ismaster": lambda cmd, db, conn: _hello(cmd, conn),
     "isMaster": lambda cmd, db, conn: _hello(cmd, conn),
@@ -392,7 +391,7 @@ OPEN_COMMANDS = {                                    # geht auch ohne Login
     "logout": lambda cmd, db, conn: conn.update(user=None) or {},
 }
 
-COMMANDS = {                                         # nur mit Login
+COMMANDS = {
     "find": _find,
     "insert": _insert,
     "update": _update,
@@ -430,8 +429,6 @@ def _run_command(cmd, conn):
         return {"ok": 0.0, "errmsg": f"{name}: {exc!r}", "code": 9, "codeName": "FailedToParse"}
 
 
-# --- Wire-Protokoll ---------------------------------------------------------
-
 def _read_exact(sock, count):
     data = b""
     while len(data) < count:
@@ -449,14 +446,14 @@ def _reply(sock, request_id, op_code, body):
 
 def _handle_op_msg(sock, request_id, body, conn):
     flags = struct.unpack_from("<I", body, 0)[0]
-    end = len(body) - (4 if flags & 1 else 0)          # Bit 0: Pruefsumme am Ende
+    end = len(body) - (4 if flags & 1 else 0)
     pos, cmd, sequences = 4, None, {}
     while pos < end:
         kind = body[pos]
         pos += 1
         if kind == 0:
             cmd, pos = decode(body, pos)
-        else:                                          # Kind 1: Dokument-Folge (z.B. insert.documents)
+        else:
             size = struct.unpack_from("<i", body, pos)[0]
             section_end = pos + size
             identifier_end = body.index(b"\x00", pos + 4)
@@ -527,7 +524,6 @@ def _is_running():
 
 
 def _follow_log(start):
-    """Zeigt neue Zeilen aus mongo_server.log in der Ausgabe von main.py an."""
     with open(LOG_FILE, encoding="utf-8", errors="replace") as log:
         log.seek(start)
         while True:
@@ -539,8 +535,6 @@ def _follow_log(start):
 
 
 def start_mongo_server():
-    """Startet den MongoDB-Server als eigenen Hintergrund-Prozess, falls auf dem Port noch keiner laeuft.
-    Laeuft dort schon einer (unser alter Prozess oder ein echtes mongod), wird dieser benutzt."""
     LOG_FILE.touch()
     start = LOG_FILE.stat().st_size
     if _is_running():
