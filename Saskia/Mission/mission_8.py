@@ -144,7 +144,7 @@ def fly_and_stay():
     set_target(target)
 
     print(
-        f"[delta] Flug zum {MAGNON_STONE}: "
+        f"[delta] Flug zum {MAGNON_ROCK}: "
         f"{MAGNON_TARGET['x']}/{MAGNON_TARGET['y']}"
     )
     print(
@@ -163,7 +163,7 @@ def fly_and_stay():
             if not arrived and gap <= MAGNON_STAY_RADIUS:
                 arrived = True
                 print(
-                    f"[delta] Haltepunkt beim {MAGNON_STONE} erreicht"
+                    f"[delta] Haltepunkt beim {MAGNON_ROCK} erreicht"
                 )
 
             elif arrived and gap > MAGNON_STAY_RADIUS:
