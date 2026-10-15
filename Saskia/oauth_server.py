@@ -9,7 +9,7 @@ from config import LASER_CLIENT_ID, LASER_CLIENT_SECRET, OAUTH_HOST, OAUTH_PORT
 
 app = Flask(__name__)
 codes = {}
-token_issued = threading.Event()   # wird gesetzt, sobald das Schiff ein Token geholt hat
+token_issued = threading.Event()  
 
 
 @app.get("/")
@@ -46,7 +46,6 @@ def authorize():
 @app.post("/token")
 def token():
     data = dict(request.form or request.get_json(silent=True) or {})
-    # Client-Daten koennen auch per HTTP Basic Auth kommen
     if request.authorization:
         data.setdefault("client_id", request.authorization.username)
         data.setdefault("client_secret", request.authorization.password)

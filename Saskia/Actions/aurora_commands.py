@@ -5,13 +5,6 @@ import time
 
 from config import AURORA_HOST, AURORA_PORT
 
-# Protokoll vom Comm Module Aurora (TCP, 192.168.101.51:2031), jede Nachricht:
-#   2 Bytes  Laenge von msg (uint16, big endian)
-#   1 Byte   Laenge vom Namen (uint8)
-#   n Bytes  Name (UTF-8) - von Aurora: dst (Ziel), an Aurora: src (Absender)
-#   m Bytes  msg
-# Beispiel: 00 04 | 03 | "src" | "test"  ->  src="src", msg="test"
-
 _sock = None
 _lock = threading.Lock()
 

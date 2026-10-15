@@ -3,11 +3,6 @@ from concurrent.futures import ThreadPoolExecutor
 import requests
 from config import ANTIMATTER_AXES, ANTIMATTER_TIMEOUT, command
 
-# Antimateriesensor: misst nur, wenn x, y und z GLEICHZEITIG laufen (wie "curl ... &" + "wait").
-#   POST /x/measure, POST /y/measure, POST /z/measure
-# Alle drei antworten {"kind": "success"}, EINER davon zusaetzlich mit "measurement": "<hex>".
-# Nacheinander aufgerufen wuerde jeder Aufruf auf die anderen beiden warten -> darum 3 Threads.
-
 _pool = ThreadPoolExecutor(max_workers=len(ANTIMATTER_AXES), thread_name_prefix="antimatter")
 
 

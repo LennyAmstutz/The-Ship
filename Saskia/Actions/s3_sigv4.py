@@ -2,15 +2,6 @@ import hashlib
 import hmac
 from urllib.parse import quote
 
-# AWS Signature Version 4 - so unterschreiben S3-Clients (minio, boto3, aws cli) ihre Anfragen.
-# Wird vom S3-Server (pruefen) und vom S3-Client (unterschreiben) in Mission 9 benutzt.
-#
-#   Authorization: AWS4-HMAC-SHA256 Credential=<access_key>/<datum>/<region>/s3/aws4_request,
-#                  SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=<hex>
-#
-# Die Signatur ist ein HMAC ueber die "kanonische" Anfrage (Methode, Pfad, Query, Header, Body-Hash).
-# Der Schluessel dafuer wird aus dem secret_key, dem Datum, der Region und dem Dienst abgeleitet.
-
 ALGORITHM = "AWS4-HMAC-SHA256"
 UNSIGNED_PAYLOAD = "UNSIGNED-PAYLOAD"
 EMPTY_SHA256 = hashlib.sha256(b"").hexdigest()

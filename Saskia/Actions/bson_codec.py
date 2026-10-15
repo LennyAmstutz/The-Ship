@@ -4,10 +4,6 @@ import struct
 import threading
 import time
 
-# BSON (das Datenformat von MongoDB) lesen und schreiben - ohne pymongo.
-# Wird vom eigenen MongoDB-Server (mongo_server.py) und vom Client (mongo_client.py) benutzt.
-
-
 class ObjectId:
     _counter = int.from_bytes(os.urandom(3), "big")
     _random = os.urandom(5)
@@ -110,7 +106,7 @@ def decode(data, pos=0):
         if kind == 0x01:
             value = struct.unpack_from("<d", data, pos)[0]
             pos += 8
-        elif kind in (0x02, 0x0D, 0x0E):                  # String, JavaScript, Symbol
+        elif kind in (0x02, 0x0D, 0x0E):                  
             length = struct.unpack_from("<i", data, pos)[0]
             value = data[pos + 4:pos + 3 + length].decode("utf-8")
             pos += 4 + length
@@ -132,7 +128,7 @@ def decode(data, pos=0):
             millis = struct.unpack_from("<q", data, pos)[0]
             value = _EPOCH + datetime.timedelta(milliseconds=millis)
             pos += 8
-        elif kind in (0x06, 0x0A, 0x7F, 0xFF):             # undefined, null, MaxKey, MinKey
+        elif kind in (0x06, 0x0A, 0x7F, 0xFF):             
             value = None
         elif kind == 0x10:
             value = struct.unpack_from("<i", data, pos)[0]
@@ -144,7 +140,7 @@ def decode(data, pos=0):
         elif kind == 0x12:
             value = struct.unpack_from("<q", data, pos)[0]
             pos += 8
-        elif kind == 0x13:                                   # Decimal128 - roh behalten
+        elif kind == 0x13:                                   
             value = Binary(data[pos:pos + 16], 0x13)
             pos += 16
         else:

@@ -16,20 +16,6 @@ from xml.sax.saxutils import escape
 from Actions import s3_sigv4
 from config import S3_ACCESS_KEY, S3_BUCKET, S3_CHECK_SIGNATURE, S3_PORT, S3_REGION, S3_SECRET_KEY
 
-# Kleiner S3-Server fuer Mission 9 - ersetzt MinIO, wenn keins installiert ist.
-# Der Analyzer Gamma liest mit access key theship / secret key theship1234 regelmaessig
-#   http://192.168.101.51:2016/analyzer-gamma/data.hex
-# (vorher fragt der minio-Client nach der Region: GET /analyzer-gamma?location=).
-#
-# Unterstuetzt: ListBuckets, Create/Head/Delete Bucket, GetBucketLocation, ListObjects (v1 + v2),
-# Put/Get/Head/Delete Object. Jede Anfrage muss mit AWS Signature V4 unterschrieben sein.
-# Jede Verbindung laeuft in einem eigenen Thread (ThreadingHTTPServer) - der Analyzer kann also lesen,
-# waehrend mission_9 gerade eine neue Messung hochlaedt. Hochladen ist atomar (tmp-Datei + rename),
-# der Analyzer sieht darum nie eine halb geschriebene data.hex.
-#
-# Die Dateien liegen in s3_data/<bucket>/<key> und ueberleben so einen Neustart.
-# Laeuft wie der MongoDB-Server als EIGENER Prozess weiter, auch wenn main.py beendet wird.
-# Log: s3_server.log (mission_9 zeigt es mit an). Stoppen: pkill -f s3_server.py
 
 DATA_DIR = Path(__file__).with_name("s3_data")
 LOG_FILE = Path(__file__).with_name("s3_server.log")
@@ -37,8 +23,7 @@ XMLNS = "http://s3.amazonaws.com/doc/2006-03-01/"
 BUCKET_NAME = re.compile(r"^[a-z0-9][a-z0-9.\-]{1,61}[a-z0-9]$")
 
 _write_lock = threading.Lock()
-_get_counts = {}                     # "bucket/key" -> wie oft gelesen (fuers Log)
-
+_get_counts = {}                     
 
 class S3Error(Exception):
     def __init__(self, status, code, message):
@@ -98,10 +83,10 @@ def _decode_aws_chunked(body):
 # --- HTTP ------------------------------------------------------------------
 
 class S3Handler(BaseHTTPRequestHandler):
-    protocol_version = "HTTP/1.1"            # Keep-Alive: der Analyzer liest immer wieder
+    protocol_version = "HTTP/1.1"            
     server_version = "TheShipS3/1.0"
 
-    def log_message(self, fmt, *args):       # Standard-Log pro Anfrage ist zu viel - wir loggen selbst
+    def log_message(self, fmt, *args):       
         pass
 
     # --- Antworten --------------------------------------------------------
@@ -145,7 +130,7 @@ class S3Handler(BaseHTTPRequestHandler):
         """Prueft die AWS-Signatur V4 (Header-Variante oder vorsignierte URL)."""
         headers = {name.lower(): value for name, value in self.headers.items()}
         query = dict(query_pairs)
-        if "X-Amz-Signature" in query:                              # vorsignierte URL
+        if "X-Amz-Signature" in query:                              
             credential = query["X-Amz-Credential"]
             auth = {"access_key": credential.split("/")[0], "scope": credential.partition("/")[2],
                     "signed_headers": query["X-Amz-SignedHeaders"].split(";"),
@@ -232,7 +217,6 @@ class S3Handler(BaseHTTPRequestHandler):
 
     def _bucket_location(self, bucket):
         _require_bucket(bucket)
-        # leer = us-east-1 (so antwortet auch AWS)
         location = "" if S3_REGION == "us-east-1" else S3_REGION
         self._send_xml(f'<LocationConstraint xmlns="{XMLNS}">{location}</LocationConstraint>')
 
@@ -301,7 +285,7 @@ class S3Handler(BaseHTTPRequestHandler):
             path.parent.mkdir(parents=True, exist_ok=True)
             tmp = path.with_name(path.name + ".s3tmp")
             tmp.write_bytes(data)
-            tmp.replace(path)                 # atomar: Leser sehen die alte ODER die neue Datei
+            tmp.replace(path)                
         self._send(200, headers={"ETag": _etag(data)})
 
     def _delete_object(self, bucket, key):
@@ -311,7 +295,7 @@ class S3Handler(BaseHTTPRequestHandler):
 
 
 def _serve_forever():
-    _bucket_dir(S3_BUCKET).mkdir(parents=True, exist_ok=True)        # den Bucket braucht der Analyzer
+    _bucket_dir(S3_BUCKET).mkdir(parents=True, exist_ok=True)       
     server = ThreadingHTTPServer(("0.0.0.0", S3_PORT), S3Handler)
     server.daemon_threads = True
     log(f"S3-Server laeuft auf Port {S3_PORT} (Bucket {S3_BUCKET}, access key {S3_ACCESS_KEY}, "
