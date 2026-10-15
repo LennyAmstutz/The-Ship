@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from Actions import energy_commands, void_sensor_commands
 from Actions.sensor_void_energy_pb import (
-    READ_SENSOR_DATA,
+    READ_DELTA_CONTINUOUSLY,
     encode_sensor_data,
 )
 from Actions.steering_commands import position, set_target
@@ -29,7 +29,6 @@ from config import (
     MAGNON_STANDOFF,
     MAGNON_STAY_RADIUS,
 )
-
 
 latest = {"hexdata": None}
 first_measurement = threading.Event()
@@ -186,8 +185,8 @@ def fly_and_stay():
 
 def run():
     start_grpc_server(
-        DELTA_PORT,
-        {READ_SENSOR_DATA: read_sensor_data},
+    DELTA_PORT,
+    {READ_DELTA_CONTINUOUSLY: read_sensor_data},
     )
 
     threading.Thread(
