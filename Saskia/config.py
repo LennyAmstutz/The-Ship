@@ -117,6 +117,23 @@ URAN_TARGET = {"x": -2100, "y": 3600}
 URAN_STANDOFF = 50              # Abstand zum Stein (wie bei Arakrock nicht direkt drauf)
 URAN_STAY_RADIUS = 30           # weiter weg vom Halte-Punkt -> Kurs neu setzen
 
+
+# --- Mission 8: Analyzer Delta --------------------------------------------
+
+DELTA_LIMITS = {
+    "sensor_void_energy": 1.0,
+    "analyzer_delta": 1.0,
+}
+
+DELTA_PORT = 2105
+DELTA_WAIT_SECONDS = 10
+
+MAGNON_ROCK = "Magnon Rock"
+MAGNON_TARGET = {"x": 37062, "y": 17964}
+
+MAGNON_STANDOFF = 50
+MAGNON_STAY_RADIUS = 30
+
 # --- Mission 9 (Analyzer Gamma + S3) -------------------------------------
 # Analyzer Gamma liest regelmaessig s3://analyzer-gamma/data.hex von http://192.168.101.51:2016.
 # Die Konfiguration im Analyzer ist hardcodiert - unser S3-Server muss genau so heissen.
