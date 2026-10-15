@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from Actions import energy_commands, void_sensor_commands
 from Actions.sensor_void_energy_pb import (
     READ_DELTA_CONTINUOUSLY,
+    READ_SENSOR_DATA,
     encode_sensor_data,
 )
 from Actions.steering_commands import position, set_target
@@ -185,8 +186,11 @@ def fly_and_stay():
 
 def run():
     start_grpc_server(
-    DELTA_PORT,
-    {READ_DELTA_CONTINUOUSLY: read_sensor_data},
+        DELTA_PORT,
+        {
+            READ_DELTA_CONTINUOUSLY: read_sensor_data,
+            READ_SENSOR_DATA: read_sensor_data,
+        },
     )
 
     threading.Thread(
