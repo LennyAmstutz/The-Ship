@@ -57,7 +57,11 @@ def tachyon_solve(log):
     causes = find_causes(log)
     response = requests.post(f"{TACHYON_URL}/solution", data=json.dumps(causes),
                              headers={"Content-Type": "application/json"}, timeout=5)
-    response.raise_for_status()
+    # Die Antwort des Scanners immer anzeigen - bei einem 400 steht dort meist der Grund
+    print(f"[delta] /solution: HTTP {response.status_code}, Antwort: {response.text!r}")
+    print(f"[delta] gesendet wurden {len(causes)} Zeilen: {json.dumps(causes)}")
+    if not response.ok:
+        raise RuntimeError(f"Scanner lehnt die Loesung ab (HTTP {response.status_code})")
     return causes, response.json()
 
 
