@@ -103,7 +103,8 @@ def hold_position(here):
 
 def fly_and_stay():
     target = hold_position(position())
-    set_target(target)
+
+    set_target(MAGNON_TARGET)
     print(f"[delta] Kurs auf {MAGNON_ROCK}, Haltepunkt {target['x']:.0f}/{target['y']:.0f}")
     arrived = False
     last_report = 0
