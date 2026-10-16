@@ -128,7 +128,7 @@ TACHYON_URL = f"http://{HOST}:2041"
  
 MAGNON_ROCK = "Magnon Rock"
 MAGNON_TARGET = {"x": 37062, "y": 17964}
-MAGNON_STANDOFF = 50
+MAGNON_STANDOFF = 30
 MAGNON_STAY_RADIUS = 30
  
 # --- Mission 9 (Analyzer Gamma + S3) -------------------------------------
