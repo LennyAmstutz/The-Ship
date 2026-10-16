@@ -1,3 +1,4 @@
+import inspect
 import socket
 import struct
 import threading
@@ -77,6 +78,8 @@ class _Connection:
 
     def _respond(self, stream_id, headers, data):
         path = dict(headers).get(":path", "")
+        answer = None
+        headers_sent = False
         try:
             handler = self.handlers.get(path)
             if handler is None:
@@ -86,11 +89,15 @@ class _Connection:
             compressed, length = struct.unpack("!BI", data[:5])
             if compressed:
                 raise GrpcError(GRPC_UNIMPLEMENTED, "komprimierte Nachrichten werden nicht unterstuetzt")
+            # Normale Handler geben bytes zurueck (eine Antwort). Ein Handler, der ein
+            # Generator ist (yield), liefert einen Stream: jede Nachricht wird sofort gesendet.
             answer = handler(bytes(data[5:5 + length]))
-            body = struct.pack("!BI", 0, len(answer)) + answer
             self.send(_frame(HEADERS, END_HEADERS, stream_id,
                              encode_headers([(":status", "200"), ("content-type", "application/grpc")])))
-            self._send_data(stream_id, body)
+            headers_sent = True
+            messages = answer if inspect.isgenerator(answer) else [answer]
+            for message in messages:
+                self._send_data(stream_id, struct.pack("!BI", 0, len(message)) + message)
             self.send(_frame(HEADERS, END_HEADERS | END_STREAM, stream_id,
                              encode_headers([("grpc-status", GRPC_OK), ("grpc-message", "")])))
         except (OSError, ConnectionError, TimeoutError) as exc:
@@ -99,12 +106,15 @@ class _Connection:
             status = exc.status if isinstance(exc, GrpcError) else GRPC_UNKNOWN
             print(f"[grpc] {path} von {self.peer}: Fehler {status}: {exc}", flush=True)
             try:
-                self.send(_frame(HEADERS, END_HEADERS | END_STREAM, stream_id, encode_headers([
-                    (":status", "200"), ("content-type", "application/grpc"),
-                    ("grpc-status", status), ("grpc-message", _grpc_message(str(exc)))])))
+                error = [("grpc-status", status), ("grpc-message", _grpc_message(str(exc)))]
+                if not headers_sent:      # noch keine Antwort-Header gesendet -> "Trailers-Only"
+                    error = [(":status", "200"), ("content-type", "application/grpc")] + error
+                self.send(_frame(HEADERS, END_HEADERS | END_STREAM, stream_id, encode_headers(error)))
             except OSError:
                 pass
         finally:
+            if inspect.isgenerator(answer):
+                answer.close()
             with self.window_lock:
                 self.stream_windows.pop(stream_id, None)
 

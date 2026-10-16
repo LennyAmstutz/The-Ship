@@ -114,19 +114,23 @@ URAN_STAY_RADIUS = 30
 # --- Mission 8: Analyzer Delta --------------------------------------------
 
 DELTA_LIMITS = {
-    "sensor_void_energy": 1.0,
+    "sensor_newton_depth": 1.0,
+    "subspace_tachyon_scanner": 1.0,
     "analyzer_delta": 1.0,
 }
-
+ 
 DELTA_PORT = 2105
 DELTA_WAIT_SECONDS = 10
-
+ 
+NEWTON_URL = f"http://{HOST}:2044"
+NEWTON_API_KEY = "foobar"            # Key aus der Doku des Sensors - falls anders, hier anpassen
+TACHYON_URL = f"http://{HOST}:2041"
+ 
 MAGNON_ROCK = "Magnon Rock"
 MAGNON_TARGET = {"x": 37062, "y": 17964}
-
 MAGNON_STANDOFF = 50
 MAGNON_STAY_RADIUS = 30
-
+ 
 # --- Mission 9 (Analyzer Gamma + S3) -------------------------------------
 S3_HOST = HOST
 S3_PORT = 2016
