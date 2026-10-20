@@ -1,6 +1,7 @@
 """Sensoren fuer Analyzer Delta: Sensor-Newton-Depth und Subspace-Tachyon-Scanner."""
 import json
 import re
+from collections import Counter
 
 import requests
 
@@ -31,14 +32,24 @@ def parse_clock(line):
     return {i: int(n) for i, n in enumerate(numbers)}
 
 
-def happened_before(a, b):
-    """a -> b : in jeder Komponente a <= b und mindestens eine echt kleiner."""
-    keys = set(a) | set(b)
-    return a != b and all(a.get(k, 0) <= b.get(k, 0) for k in keys)
+def happened_before(line_clock, bug_clock):
+    """Ist die Zeile eine moegliche Ursache des Bugs?
+
+    Regel (so wertet der Scanner aus, belegt durch seinen 'tip_for_next_try'):
+    - die Zeile muss JEDE Komponente der Bug-Uhr enthalten. Zeilen mit fehlenden
+      Komponenten (z.B. nur '0: 6') zaehlen NICHT, auch wenn die Zahlen kleiner sind
+    - jede Komponente der Zeile ist <= der Komponente der Bug-Uhr
+    - die Uhren sind nicht identisch
+    """
+    if not all(k in line_clock for k in bug_clock):
+        return False
+    if not all(v <= bug_clock.get(k, 0) for k, v in line_clock.items()):
+        return False
+    return line_clock != bug_clock
 
 
 def find_causes(log):
-    """Alle Log-Zeilen, die kausal VOR der Bug-Zeile liegen (nebenlaeufige/spaetere scheiden aus)."""
+    """Alle Log-Zeilen, die kausal VOR der Bug-Zeile liegen (Reihenfolge wie im Log)."""
     bug = next(line for line in log if BUG_MARK in line)
     bug_clock = parse_clock(bug)
     return [line for line in log
@@ -53,15 +64,39 @@ def tachyon_status():
     return response.json()
 
 
+def _report_tip(sent, response_text):
+    """Bei einer falschen Loesung liefert der Scanner die richtige als 'tip_for_next_try'.
+    Wir vergleichen sie mit unserer Antwort und pruefen, ob unsere Regel den Tipp erklaert."""
+    try:
+        tip = json.loads(response_text).get("tip_for_next_try")
+    except ValueError:
+        return
+    if not tip or "solution" not in tip:
+        return
+    right = Counter(tip["solution"])
+    ours = Counter(sent)
+    too_many = list((ours - right).elements())
+    missing = list((right - ours).elements())
+    print(f"[delta] Tipp des Scanners: {sum(right.values())} richtige Zeilen; "
+          f"bei uns {len(too_many)} zu viel, {len(missing)} fehlen")
+    for line in too_many[:10]:
+        print("[delta]   zu viel:", line)
+    for line in missing[:10]:
+        print("[delta]   fehlt:  ", line)
+    if tip.get("log"):
+        same = Counter(find_causes(tip["log"])) == right
+        print("[delta] Unsere Regel reproduziert den Tipp:", "JA" if same else "NEIN")
+
+
 def tachyon_solve(log):
     causes = find_causes(log)
     response = requests.post(f"{TACHYON_URL}/solution", data=json.dumps(causes),
                              headers={"Content-Type": "application/json"}, timeout=5)
-    # Die Antwort des Scanners immer anzeigen - bei einem 400 steht dort meist der Grund
-    print(f"[delta] /solution: HTTP {response.status_code}, Antwort: {response.text!r}")
-    print(f"[delta] gesendet wurden {len(causes)} Zeilen: {json.dumps(causes)}")
+    print(f"[delta] /solution: HTTP {response.status_code}, gesendet {len(causes)} Zeilen")
     if not response.ok:
-        raise RuntimeError(f"Scanner lehnt die Loesung ab (HTTP {response.status_code})")
+        _report_tip(causes, response.text)
+        raise RuntimeError(f"Scanner lehnt die Loesung ab (HTTP {response.status_code}): "
+                           f"{response.text[:150]!r}")
     return causes, response.json()
 
 

@@ -96,15 +96,16 @@ def distance(a, b):
 
 def hold_position(here):
     dx, dy = here["x"] - MAGNON_TARGET["x"], here["y"] - MAGNON_TARGET["y"]
-    length = (dx ** 2 + dy ** 2) ** 0.5 or 1
+    length = (dx ** 2 + dy ** 2) ** 0.5
+    if length == 0:
+        return {"x": MAGNON_TARGET["x"] + MAGNON_STANDOFF, "y": MAGNON_TARGET["y"]}
     return {"x": MAGNON_TARGET["x"] + dx / length * MAGNON_STANDOFF,
             "y": MAGNON_TARGET["y"] + dy / length * MAGNON_STANDOFF}
 
 
 def fly_and_stay():
     target = hold_position(position())
-
-    set_target(MAGNON_TARGET)
+    set_target(target)
     print(f"[delta] Kurs auf {MAGNON_ROCK}, Haltepunkt {target['x']:.0f}/{target['y']:.0f}")
     arrived = False
     last_report = 0
