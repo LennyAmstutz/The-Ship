@@ -123,7 +123,7 @@ DELTA_PORT = 2105
 DELTA_WAIT_SECONDS = 10
  
 NEWTON_URL = f"http://{HOST}:2044"
-NEWTON_API_KEY = "foobar"            # Key aus der Doku des Sensors - falls anders, hier anpassen
+NEWTON_API_KEY = "0UAOIO044ENZBW1HR4C3"            
 TACHYON_URL = f"http://{HOST}:2041"
  
 MAGNON_ROCK = "Magnon Rock"
