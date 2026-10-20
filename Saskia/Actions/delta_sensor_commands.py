@@ -16,11 +16,9 @@ def newton_depth():
     """GET /read mit X-API-KEY -> Hex-String."""
     response = requests.get(f"{NEWTON_URL}/read", headers={"X-API-KEY": NEWTON_API_KEY}, timeout=5)
     if not response.ok:
-        # Der Text hinter "401 Client Error" ist nur die kurze Statuszeile - der Body
-        # des Sensors enthaelt oft mehr (z.B. wo der richtige Key steht)
         raise RuntimeError(f"HTTP {response.status_code}, Body: {response.text[:500]!r}")
     text = response.text.strip()
-    try:                      # der Sensor antwortet mit {"data": "<hex>"}, die Doku zeigt nur den Hex-String
+    try:                     
         return json.loads(text)["data"]
     except (ValueError, KeyError, TypeError):
         return text

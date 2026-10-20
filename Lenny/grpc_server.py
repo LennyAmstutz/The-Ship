@@ -1,16 +1,10 @@
+import inspect
 import socket
 import struct
 import threading
 from urllib.parse import quote
 
 from Actions.hpack_codec import Decoder, encode_headers
-
-# Kleiner gRPC-Server fuer Mission 7 - ersetzt grpcio, das auf dem Schiff fehlt.
-# gRPC laeuft ueber HTTP/2 (hier unverschluesselt, "h2c"). Pro Aufruf schickt der Client:
-#   HEADERS (:path = /paket.Service/methode) + DATA (5 Bytes Laenge + Protobuf-Nachricht)
-# und bekommt zurueck:
-#   HEADERS (:status 200) + DATA (Antwort) + HEADERS mit grpc-status (die "Trailer").
-# Unterstuetzt nur unaere Aufrufe (eine Anfrage, eine Antwort) - mehr braucht der Analyzer nicht.
 
 PREFACE = b"PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 
@@ -41,14 +35,13 @@ class _Connection:
         self.peer = f"{address[0]}:{address[1]}"
         self.handlers = handlers
         self.decoder = Decoder()
-        self.streams = {}                    # stream_id -> {"block", "headers", "data", "ended"}
+        self.streams = {}                   
         self.write_lock = threading.Lock()
-        # Flusskontrolle fuer das, was WIR senden: der Client sagt, wie viel er aufnehmen kann
         self.window_lock = threading.Condition()
         self.max_frame = 16384
         self.initial_window = 65535
         self.conn_window = 65535
-        self.stream_windows = {}             # stream_id -> freies Fenster (None = abgebrochen)
+        self.stream_windows = {}             
 
     def send(self, *frames):
         with self.write_lock:
@@ -85,6 +78,8 @@ class _Connection:
 
     def _respond(self, stream_id, headers, data):
         path = dict(headers).get(":path", "")
+        answer = None
+        headers_sent = False
         try:
             handler = self.handlers.get(path)
             if handler is None:
@@ -95,10 +90,12 @@ class _Connection:
             if compressed:
                 raise GrpcError(GRPC_UNIMPLEMENTED, "komprimierte Nachrichten werden nicht unterstuetzt")
             answer = handler(bytes(data[5:5 + length]))
-            body = struct.pack("!BI", 0, len(answer)) + answer
             self.send(_frame(HEADERS, END_HEADERS, stream_id,
                              encode_headers([(":status", "200"), ("content-type", "application/grpc")])))
-            self._send_data(stream_id, body)
+            headers_sent = True
+            messages = answer if inspect.isgenerator(answer) else [answer]
+            for message in messages:
+                self._send_data(stream_id, struct.pack("!BI", 0, len(message)) + message)
             self.send(_frame(HEADERS, END_HEADERS | END_STREAM, stream_id,
                              encode_headers([("grpc-status", GRPC_OK), ("grpc-message", "")])))
         except (OSError, ConnectionError, TimeoutError) as exc:
@@ -107,12 +104,15 @@ class _Connection:
             status = exc.status if isinstance(exc, GrpcError) else GRPC_UNKNOWN
             print(f"[grpc] {path} von {self.peer}: Fehler {status}: {exc}", flush=True)
             try:
-                self.send(_frame(HEADERS, END_HEADERS | END_STREAM, stream_id, encode_headers([
-                    (":status", "200"), ("content-type", "application/grpc"),
-                    ("grpc-status", status), ("grpc-message", _grpc_message(str(exc)))])))
+                error = [("grpc-status", status), ("grpc-message", _grpc_message(str(exc)))]
+                if not headers_sent:     
+                    error = [(":status", "200"), ("content-type", "application/grpc")] + error
+                self.send(_frame(HEADERS, END_HEADERS | END_STREAM, stream_id, encode_headers(error)))
             except OSError:
                 pass
         finally:
+            if inspect.isgenerator(answer):
+                answer.close()
             with self.window_lock:
                 self.stream_windows.pop(stream_id, None)
 
@@ -123,7 +123,6 @@ class _Connection:
             threading.Thread(target=self._respond, args=(stream_id, stream["headers"], stream["data"]),
                              daemon=True).start()
 
-    # --- Frames lesen --------------------------------------------------------
 
     def _on_headers(self, flags, stream_id, payload, continuation=False):
         if stream_id not in self.streams:
@@ -145,11 +144,10 @@ class _Connection:
             headers = self.decoder.decode(stream["block"])
             stream["block"] = b""
             if stream["headers"] is None:
-                stream["headers"] = headers            # sonst sind es Trailer vom Client - egal
-            self._finish_if_ready(stream_id)
+                stream["headers"] = headers            
 
     def _on_data(self, flags, stream_id, payload):
-        if payload:                                    # Flusskontrolle: gelesene Bytes wieder freigeben
+        if payload:                                    
             increment = struct.pack("!I", len(payload))
             frames = [_frame(WINDOW_UPDATE, 0, 0, increment)]
             if not flags & END_STREAM:
@@ -169,13 +167,13 @@ class _Connection:
         with self.window_lock:
             for pos in range(0, len(payload) - 5, 6):
                 key, value = struct.unpack("!HI", payload[pos:pos + 6])
-                if key == 4:                               # INITIAL_WINDOW_SIZE gilt auch fuer offene Streams
+                if key == 4:                               
                     delta = value - self.initial_window
                     self.initial_window = value
                     for sid, window in self.stream_windows.items():
                         if window is not None:
                             self.stream_windows[sid] = window + delta
-                elif key == 5:                             # MAX_FRAME_SIZE
+                elif key == 5:                             
                     self.max_frame = value
             self.window_lock.notify_all()
 
@@ -193,7 +191,7 @@ class _Connection:
             if self._read_exact(len(PREFACE)) != PREFACE:
                 print(f"[grpc] {self.peer} spricht kein HTTP/2 - Verbindung zu", flush=True)
                 return
-            self.send(_frame(SETTINGS, 0, 0, struct.pack("!HI", 3, 100)))   # max. 100 Streams gleichzeitig
+            self.send(_frame(SETTINGS, 0, 0, struct.pack("!HI", 3, 100)))   
             last_headers_stream = 0
             while True:
                 header = self._read_exact(9)
@@ -217,22 +215,22 @@ class _Connection:
                 elif frame_type == PING and not flags & ACK:
                     self.send(_frame(PING, ACK, 0, payload))
                 elif frame_type == RST_STREAM:
-                    waiting = self.streams.pop(stream_id, None) is not None   # Antwort noch nicht gestartet
+                    waiting = self.streams.pop(stream_id, None) is not None   
                     with self.window_lock:
                         if waiting:
                             self.stream_windows.pop(stream_id, None)
                         elif stream_id in self.stream_windows:
-                            self.stream_windows[stream_id] = None             # laufende Antwort abbrechen
+                            self.stream_windows[stream_id] = None             
                         self.window_lock.notify_all()
                 elif frame_type == GOAWAY:
                     return
-                # PRIORITY, SETTINGS-ACK, PING-ACK und Unbekanntes: nichts zu tun
+                
         except (OSError, ConnectionError):
             pass
         except Exception as exc:
             print(f"[grpc] Fehler mit {self.peer}: {exc!r}", flush=True)
             try:
-                self.send(_frame(GOAWAY, 0, 0, struct.pack("!II", 0, 1)))   # PROTOCOL_ERROR
+                self.send(_frame(GOAWAY, 0, 0, struct.pack("!II", 0, 1)))   
             except OSError:
                 pass
         finally:

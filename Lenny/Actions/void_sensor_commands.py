@@ -3,11 +3,6 @@ import time
 import requests
 from config import command, SENSOR_POLL_SECONDS, SENSOR_TIMEOUT
 
-# Vakuumenergie-Sensor: Messung ausloesen, Ergebnis abholen, Ergebnis wieder loeschen.
-# Wer eine Messung ausloest, ist ihr Besitzer (Resource Owner) und muss sie auch loeschen -
-# sonst laeuft der Speicher des Sensors voll.
-
-
 def trigger(request_id):
     response = requests.post(f"{command['void_sensor']}/trigger_measurement",
                              json={"request_id": request_id}, timeout=5)

@@ -89,8 +89,6 @@ class _Connection:
             compressed, length = struct.unpack("!BI", data[:5])
             if compressed:
                 raise GrpcError(GRPC_UNIMPLEMENTED, "komprimierte Nachrichten werden nicht unterstuetzt")
-            # Normale Handler geben bytes zurueck (eine Antwort). Ein Handler, der ein
-            # Generator ist (yield), liefert einen Stream: jede Nachricht wird sofort gesendet.
             answer = handler(bytes(data[5:5 + length]))
             self.send(_frame(HEADERS, END_HEADERS, stream_id,
                              encode_headers([(":status", "200"), ("content-type", "application/grpc")])))
@@ -107,7 +105,7 @@ class _Connection:
             print(f"[grpc] {path} von {self.peer}: Fehler {status}: {exc}", flush=True)
             try:
                 error = [("grpc-status", status), ("grpc-message", _grpc_message(str(exc)))]
-                if not headers_sent:      # noch keine Antwort-Header gesendet -> "Trailers-Only"
+                if not headers_sent:     
                     error = [(":status", "200"), ("content-type", "application/grpc")] + error
                 self.send(_frame(HEADERS, END_HEADERS | END_STREAM, stream_id, encode_headers(error)))
             except OSError:
