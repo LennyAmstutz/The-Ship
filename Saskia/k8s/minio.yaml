@@ -1,9 +1,3 @@
-# Echtes MinIO (S3) fuer den Analyzer Gamma (Mission 9) - Alternative zu s3_server.py.
-# Der Analyzer erwartet es unter http://192.168.101.51:2016, Bucket analyzer-gamma,
-# access key theship / secret key theship1234.
-#   kubectl apply -f k8s/minio.yaml
-# mission_9 erkennt, dass auf Port 2016 schon ein S3-Server laeuft, benutzt diesen
-# und legt den Bucket analyzer-gamma selbst an.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

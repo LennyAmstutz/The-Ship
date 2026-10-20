@@ -6,8 +6,6 @@ import websocket
 
 from config import command, COMM_KEY
 
-# Eine einzige Verbindung fuers Senden UND Empfangen. Das Comm-Modul ist nur offen,
-# solange die Station in Reichweite ist - darum wird bei jedem Fehler neu verbunden.
 _lock = threading.Lock()
 _ws = None
 _connected_since = 0.0

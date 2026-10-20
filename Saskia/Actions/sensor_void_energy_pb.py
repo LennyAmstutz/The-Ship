@@ -1,4 +1,5 @@
 READ_SENSOR_DATA = "/api.unsafe.sensor_void_energy.SensorVoidEnergyServer/read_sensor_data"
+READ_DELTA_CONTINUOUSLY = "/api.unsafe.analyzer_delta.AnalyzerDeltaEndpoint/read_continuously"
 
 
 def _varint(value):

@@ -1,9 +1,4 @@
-# HPACK (RFC 7541) - so werden bei HTTP/2 die Header komprimiert. Wird vom eigenen
-# gRPC-Server (grpc_server.py) gebraucht, weil grpcio/h2 auf dem Schiff fehlen.
-#   Decoder: alles, was ein Client schicken darf (Huffman, dynamische Tabelle)
-#   Encoder: einfach gehalten, schreibt die Header ohne Kompression
 
-# Huffman-Code (code, bits) fuer die Symbole 0..256 (256 = EOS), RFC 7541 Anhang B
 HUFFMAN_CODES = [
     (0x1ff8, 13), (0x7fffd8, 23), (0xfffffe2, 28), (0xfffffe3, 28), (0xfffffe4, 28), (0xfffffe5, 28),
     (0xfffffe6, 28), (0xfffffe7, 28), (0xfffffe8, 28), (0xffffea, 24), (0x3ffffffc, 30), (0xfffffe9, 28),
@@ -50,7 +45,6 @@ HUFFMAN_CODES = [
     (0x7ffffee, 27), (0x7ffffef, 27), (0x7fffff0, 27), (0x3ffffee, 26), (0x3fffffff, 30),
 ]
 
-# Statische Tabelle, RFC 7541 Anhang A (Index 1..61)
 STATIC_TABLE = [
     (':authority', ''),
     (':method', 'GET'),
@@ -131,7 +125,7 @@ def _huffman_decode(data):
                     raise ValueError("EOS im Huffman-Code")
                 out.append(symbol)
                 code = bits = 0
-    if bits > 7 or code != (1 << bits) - 1:          # Rest muss mit 1-Bits aufgefuellt sein
+    if bits > 7 or code != (1 << bits) - 1:          
         raise ValueError("ungueltiges Huffman-Padding")
     return bytes(out)
 
@@ -186,7 +180,7 @@ class Decoder:
     """Pro Verbindung einer, weil die dynamische Tabelle ueber alle Requests weiterlebt."""
 
     def __init__(self, max_size=4096):
-        self.table = []                                  # neueste zuerst
+        self.table = []                                  
         self.max_size = max_size
 
     def _size(self):
@@ -208,15 +202,15 @@ class Decoder:
         headers, pos = [], 0
         while pos < len(data):
             byte = data[pos]
-            if byte & 0x80:                              # 1xxxxxxx: ganzer Header aus der Tabelle
+            if byte & 0x80:                              
                 index, pos = _decode_int(data, pos, 7)
                 headers.append(self._lookup(index))
                 continue
-            if byte & 0xE0 == 0x20:                      # 001xxxxx: Groesse der Tabelle aendern
+            if byte & 0xE0 == 0x20:                      
                 self.max_size, pos = _decode_int(data, pos, 5)
                 self._evict()
                 continue
-            indexing = byte & 0xC0 == 0x40               # 01xxxxxx: in die Tabelle aufnehmen
+            indexing = byte & 0xC0 == 0x40               
             index, pos = _decode_int(data, pos, 6 if indexing else 4)
             if index:
                 name = self._lookup(index)[0]

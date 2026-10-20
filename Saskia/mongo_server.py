@@ -14,25 +14,14 @@ from pathlib import Path
 from Actions.bson_codec import ObjectId, decode, encode
 from config import MONGO_DB, MONGO_PASSWORD, MONGO_PORT, MONGO_USER
 
-# Kleiner MongoDB-Server fuer Mission 6 - ersetzt mongod, wenn keiner installiert ist.
-# Der Schildgenerator verbindet sich mit mongodb://theship:theship1234@192.168.101.51:2021/theshipdb
-# und liest dort das Dokument aus der Collection vacuum-energy.
-#
-# Spricht das MongoDB-Wire-Protokoll (OP_MSG und das alte OP_QUERY fuer den Handshake),
-# Login mit SCRAM-SHA-256 / SCRAM-SHA-1 und die Befehle find, insert, update, delete, count/aggregate
-# (+ was Treiber und mongosh beim Verbinden fragen). Die Daten werden in mongo_data.bson
-# gespeichert und ueberleben so einen Neustart.
-#
-# Laeuft wie der MQTT-Server als EIGENER Prozess weiter, auch wenn main.py beendet wird.
-# Log: mongo_server.log (mission_6 zeigt es mit an). Stoppen: pkill -f mongo_server.py
 
 OP_REPLY, OP_QUERY, OP_MSG = 1, 2004, 2013
-MAX_WIRE_VERSION = 17                                 # verhaelt sich wie MongoDB 6.0
+MAX_WIRE_VERSION = 17                                 
 
 DATA_FILE = Path(__file__).with_name("mongo_data.bson")
 LOG_FILE = Path(__file__).with_name("mongo_server.log")
 
-_data = {}                                            # {db: {collection: [dokumente]}}
+_data = {}                                           
 _data_lock = threading.Lock()
 _connection_ids = iter(range(1, 10 ** 9))
 _logged_in = set()
@@ -122,7 +111,7 @@ def _matches(document, query):
 
 
 def _apply_update(document, update):
-    if not any(key.startswith("$") for key in update):       # Ersatz-Dokument
+    if not any(key.startswith("$") for key in update):       
         replacement = {"_id": document.get("_id", ObjectId())}
         replacement.update({k: v for k, v in update.items() if k != "_id"})
         document.clear()
@@ -175,7 +164,7 @@ def _hello(cmd, conn):
         try:
             reply["speculativeAuthenticate"] = _sasl_start(cmd["speculativeAuthenticate"], conn)
         except CommandError:
-            pass                                       # Treiber macht dann den normalen Login
+            pass                                       
     return reply
 
 
@@ -237,7 +226,7 @@ def _sasl_continue(cmd, conn):
     sasl["done"] = True
     conn["user"] = sasl["user"]
     host = conn["peer"].rsplit(":", 1)[0]
-    if (sasl["user"], host) not in _logged_in:          # jede Gegenstelle nur beim ersten Mal melden
+    if (sasl["user"], host) not in _logged_in:         
         _logged_in.add((sasl["user"], host))
         print(f"[mongo] {sasl['user']} von {host} eingeloggt", flush=True)
     return {"conversationId": 1, "done": True,
@@ -339,7 +328,7 @@ def _aggregate(cmd, db):
             group = {"_id": arg["_id"]}
             for field, spec in arg.items():
                 if field != "_id":
-                    (_, value), = spec.items()                # {"$sum": 1}
+                    (_, value), = spec.items()                
                     group[field] = value * len(docs) if isinstance(value, (int, float)) else len(docs)
             docs = [group] if docs else []
         else:
@@ -379,7 +368,7 @@ def _build_info(cmd, db):
             "maxBsonObjectSize": 16 * 1024 * 1024, "modules": []}
 
 
-OPEN_COMMANDS = {                                    # geht auch ohne Login
+OPEN_COMMANDS = {                                    
     "hello": lambda cmd, db, conn: _hello(cmd, conn),
     "ismaster": lambda cmd, db, conn: _hello(cmd, conn),
     "isMaster": lambda cmd, db, conn: _hello(cmd, conn),
@@ -392,7 +381,7 @@ OPEN_COMMANDS = {                                    # geht auch ohne Login
     "logout": lambda cmd, db, conn: conn.update(user=None) or {},
 }
 
-COMMANDS = {                                         # nur mit Login
+COMMANDS = {                                        
     "find": _find,
     "insert": _insert,
     "update": _update,
@@ -449,7 +438,7 @@ def _reply(sock, request_id, op_code, body):
 
 def _handle_op_msg(sock, request_id, body, conn):
     flags = struct.unpack_from("<I", body, 0)[0]
-    end = len(body) - (4 if flags & 1 else 0)          # Bit 0: Pruefsumme am Ende
+    end = len(body) - (4 if flags & 1 else 0)          
     pos, cmd, sequences = 4, None, {}
     while pos < end:
         kind = body[pos]
@@ -468,7 +457,7 @@ def _handle_op_msg(sock, request_id, body, conn):
             sequences[identifier] = docs
     cmd.update(sequences)
     reply = _run_command(cmd, conn)
-    if not flags & 2:                                  # Bit 1 (moreToCome): keine Antwort erwartet
+    if not flags & 2:                                 
         _reply(sock, request_id, OP_MSG, struct.pack("<I", 0) + b"\x00" + encode(reply))
 
 

@@ -1,9 +1,6 @@
 import requests
 from config import command
 
-# Energy-Management im Aktiv/Passiv-Modus: 2 Nodes, immer genau einer ist aktiv.
-# Lesen geht bei beiden, schreiben nur beim aktiven Node.
-
 
 def status(node):
     response = requests.get(f"{node}/status", timeout=5)

@@ -57,8 +57,6 @@ HOLD_SECONDS = 60
 HINT = {"x": -19747, "y": -14282}
 
 # --- Mission 4 -----------------------------------------------------------
-# Der OAuth-Server laeuft zusammen mit diesem Code auf der Schiff-VM.
-# Port 2015 ist dort vom RabbitMQ-Dashboard belegt, darum 5015.
 OAUTH_HOST = HOST
 OAUTH_PORT = 5015
 AUTHORIZE_URL = f"http://{OAUTH_HOST}:{OAUTH_PORT}/authorize"
@@ -78,20 +76,16 @@ ANGLE_STEP = 5
 LASER_POLL_SECONDS = 2
 
 # --- Mission 5 (Kommunikation Reloaded) ----------------------------------
-# Aurora Station (Saskia) <-> Vesta Station (Lenny)
 AURORA_STATION = "Aurora Station"
 AURORA_TARGET = {"x": -6000, "y": 7000}
 
-# Comm Module Aurora: eigenes Binaerprotokoll ueber TCP, wir sind der Client.
 AURORA_HOST = HOST
 AURORA_PORT = 2031
 
 # --- Mission 6 (Schild) ----------------------------------------------------
-# Energy-Management (Aktiv/Passiv): nur der aktive Node nimmt neue Limits an
 SHIELD_LIMITS = {"sensor_void_energy": 1.0, "shield_generator": 1.0}
 ENERGY_CHECK_SECONDS = 5
 
-# Der Schildgenerator liest die Sensordaten aus dieser MongoDB (hardcodiert im Generator)
 MONGO_HOST = HOST
 MONGO_PORT = 2021
 MONGO_USER = "theship"
@@ -107,19 +101,38 @@ RELIEF_STATION = "Relief Station"
 RELIEF_TARGET = {"x": 150000, "y": 150000}
 
 # --- Mission 7 (Analyzer Alpha) ----------------------------------------------
-# Der Analyzer holt die Vakuumenergie-Daten per gRPC bei uns ab: grpc://192.168.101.51:2102
 ANALYZER_LIMITS = {"sensor_void_energy": 1.0, "analyzer_alpha": 1.0}
 GRPC_PORT = 2102
-GRPC_WAIT_SECONDS = 10          # so lange wartet ein Aufruf hoechstens auf die erste Messung
+GRPC_WAIT_SECONDS = 10          
 
 URAN_STONE = "Uran Stone"
 URAN_TARGET = {"x": -2100, "y": 3600}
-URAN_STANDOFF = 50              # Abstand zum Stein (wie bei Arakrock nicht direkt drauf)
-URAN_STAY_RADIUS = 30           # weiter weg vom Halte-Punkt -> Kurs neu setzen
+URAN_STANDOFF = 50              
+URAN_STAY_RADIUS = 30         
 
+
+# --- Mission 8: Analyzer Delta --------------------------------------------
+ 
+DELTA_LIMITS = {
+    "sensor_newton_depth": 1.0,
+    "subspace_tachyon_scanner": 1.0,
+    "analyzer_delta": 1.0,
+}
+ 
+DELTA_PORT = 2105
+DELTA_WAIT_SECONDS = 10
+ 
+NEWTON_URL = f"http://{HOST}:2044"
+NEWTON_API_KEY = "0UAOIO044ENZBW1HR4C3"       # ev. Bei Lenny anpassen?     
+TACHYON_URL = f"http://{HOST}:2041"
+ 
+MAGNON_ROCK = "Magnon Rock"
+MAGNON_TARGET = {"x": 37062, "y": 17964}
+MAGNON_STANDOFF = 50
+MAGNON_STAY_RADIUS = 30
+
+ 
 # --- Mission 9 (Analyzer Gamma + S3) -------------------------------------
-# Analyzer Gamma liest regelmaessig s3://analyzer-gamma/data.hex von http://192.168.101.51:2016.
-# Die Konfiguration im Analyzer ist hardcodiert - unser S3-Server muss genau so heissen.
 S3_HOST = HOST
 S3_PORT = 2016
 S3_BUCKET = "analyzer-gamma"
@@ -127,12 +140,11 @@ S3_OBJECT = "data.hex"
 S3_ACCESS_KEY = "theship"
 S3_SECRET_KEY = "theship1234"
 S3_REGION = "us-east-1"
-S3_CHECK_SIGNATURE = True       # False: Server nimmt jede Anfrage mit dem richtigen access key an
+S3_CHECK_SIGNATURE = True       
 
-# Antimateriesensor: x, y und z muessen GLEICHZEITIG messen, einer davon liefert das Resultat
 ANTIMATTER_AXES = ("x", "y", "z")
-ANTIMATTER_TIMEOUT = 120        # so lange darf eine Messung (alle 3 Achsen) dauern
-ANTIMATTER_INTERVAL = 2         # Pause zwischen zwei Messungen
+ANTIMATTER_TIMEOUT = 120       
+ANTIMATTER_INTERVAL = 2         
 
 GAMMA_LIMITS = {"sensor_antimatter": 1.0, "analyzer_gamma": 1.0,
                 "laser": 0.0, "nuclear_reactor": 0.0, "analyzer_beta": 0.0,
@@ -140,7 +152,7 @@ GAMMA_LIMITS = {"sensor_antimatter": 1.0, "analyzer_gamma": 1.0,
 
 AETHERIUM_ROCK = "Aetherium Rock"
 AETHERIUM_TARGET = {"x": 30957, "y": -28933}
-AETHERIUM_STANDOFF = 50         # Abstand zum Aetherium Rock
-AETHERIUM_STAY_RADIUS = 30      # weiter weg vom Halte-Punkt -> Kurs neu setzen
+AETHERIUM_STANDOFF = 50         
+AETHERIUM_STAY_RADIUS = 30     
 
 REPORT_SECONDS = 10

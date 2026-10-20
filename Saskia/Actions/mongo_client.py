@@ -9,9 +9,6 @@ import threading
 
 from Actions.bson_codec import decode, encode
 
-# Kleiner MongoDB-Client (OP_MSG + Login mit SCRAM-SHA-256) - ohne pymongo, das auf dem Schiff fehlt.
-# Funktioniert mit unserem mongo_server.py und mit einem echten mongod.
-
 OP_MSG = 2013
 
 

@@ -6,8 +6,6 @@ import requests
 from Actions import s3_sigv4
 from config import S3_ACCESS_KEY, S3_HOST, S3_PORT, S3_REGION, S3_SECRET_KEY
 
-# Mini-S3-Client mit AWS Signature V4 (ersetzt boto3/minio, die auf dem Schiff fehlen).
-# Funktioniert mit unserem s3_server.py und mit einem echten MinIO.
 
 ENDPOINT = f"http://{S3_HOST}:{S3_PORT}"
 
@@ -40,7 +38,7 @@ def ensure_bucket(bucket):
     if _request("HEAD", _path(bucket)).status_code == 200:
         return
     response = _request("PUT", _path(bucket))
-    if response.status_code not in (200, 409):          # 409 = gibt es schon
+    if response.status_code not in (200, 409):          
         raise RuntimeError(f"Bucket {bucket} anlegen: {response.status_code} {response.text.strip()}")
 
 
