@@ -6,9 +6,6 @@ import requests
 from Actions import s3_sigv4
 from config import S3_ACCESS_KEY, S3_HOST, S3_PORT, S3_REGION, S3_SECRET_KEY
 
-# Mini-S3-Client mit AWS Signature V4 (ersetzt boto3/minio, die auf dem Schiff fehlen).
-# Funktioniert mit unserem s3_server.py und mit einem echten MinIO.
-
 ENDPOINT = f"http://{S3_HOST}:{S3_PORT}"
 
 

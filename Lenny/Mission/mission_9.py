@@ -23,15 +23,6 @@ from config import (
     S3_PORT,
 )
 
-# Mission 9: Analyzer Gamma beim Aetherium Rock laufen lassen
-#   1. Eigenen S3-Server auf Port 2016 starten (Bucket analyzer-gamma, theship / theship1234)
-#   2. Energy-Management: Antimateriesensor und Analyzer Gamma mit Strom versorgen
-#   3. Antimateriesensor messen lassen - x, y und z GLEICHZEITIG (3 Threads) - und das Resultat
-#      als Hex-String in s3://analyzer-gamma/data.hex hochladen. Der Analyzer liest es dort regelmaessig.
-#   4. Zum Aetherium Rock (30957/-28933) fliegen und in der Naehe bleiben
-# Nebenlaeufig: Energie-Check, Messen+Hochladen und Fliegen laufen in eigenen Threads,
-# der S3-Server beantwortet jede Anfrage des Analyzers in einem eigenen Thread.
-
 stats = {"uploads": 0, "last": None}
 first_upload = threading.Event()
 
@@ -117,7 +108,7 @@ def run():
     threading.Thread(target=keep_power, daemon=True).start()
     threading.Thread(target=measure_forever, daemon=True).start()
 
-    fly_and_stay()          # laeuft weiter, bis man mit Ctrl+C abbricht
+    fly_and_stay()
 
 
 if __name__ == "__main__":

@@ -138,7 +138,7 @@ MAGNON_TARGET = {"x": 37062, "y": 17964}
 MAGNON_STANDOFF = 50
 MAGNON_STAY_RADIUS = 30
 
-# --- Mission 9 (Analyzer Gamma + S3) -------------------------------------
+# --- Mission 9 (Analyzer Gamma ) -------------------------------------
 S3_HOST = HOST
 S3_PORT = 2016
 S3_BUCKET = "analyzer-gamma"
@@ -158,5 +158,5 @@ GAMMA_LIMITS = {"sensor_antimatter": 1.0, "analyzer_gamma": 1.0,
 
 AETHERIUM_ROCK = "Aetherium Rock"
 AETHERIUM_TARGET = {"x": 30957, "y": -28933}
-AETHERIUM_STANDOFF = 50         # Abstand zum Aetherium Rock
-AETHERIUM_STAY_RADIUS = 30      # weiter weg vom Halte-Punkt -> Kurs neu setzen
+AETHERIUM_STANDOFF = 50
+AETHERIUM_STAY_RADIUS = 30
