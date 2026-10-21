@@ -130,7 +130,7 @@ DELTA_PORT = 2105
 DELTA_WAIT_SECONDS = 10
  
 NEWTON_URL = f"http://{HOST}:2044"
-NEWTON_API_KEY = "foobar"
+NEWTON_API_KEY = "0x7fe4a3f0fcb0"
 TACHYON_URL = f"http://{HOST}:2041"
  
 MAGNON_ROCK = "Magnon Rock"
